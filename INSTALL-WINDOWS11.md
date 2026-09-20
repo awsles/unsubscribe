@@ -118,3 +118,37 @@ npm run stop
 ```
 
 For a manually installed custom add-in, return to **Add-Ins for Outlook → My add-ins → Custom Addins** and remove the custom add-in there.
+
+
+---
+
+### Sideload into Outlook (UPDATED)
+
+1. **Download `manifest.xml` to your Windows 11 PC.** In GitHub, open `manifest.xml` → click **Raw/Download raw file** and save it somewhere convenient such as Downloads.
+
+2. In your browser, open Microsoft's Outlook sideload page:
+   [Open Outlook add-in sideloading](https://aka.ms/olksideload?utm_source=chatgpt.com)
+   Sign in with the same Microsoft account/mailbox you use in Outlook. Microsoft currently recommends this route for manual sideloading in both new and classic Outlook. ([Microsoft Learn][2])
+
+3. In the **Add-Ins for Outlook** window, select **My add-ins**.
+
+4. Scroll down to **Custom Addins**.
+
+5. Click **Add a custom add-in → Add from File**. Microsoft has removed the old **Add from URL** option, so you need the local XML file. ([Microsoft Learn][2])
+
+6. Select the downloaded:
+
+   ```text
+   manifest.xml
+   ```
+
+7. Accept the installation/security prompts.
+
+8. Open Outlook and then open a received email message. Your **Unsubscribe** command should become available on the message's add-in/ribbon surface.
+
+9. Test it with a newsletter that has a `List-Unsubscribe` header. Clicking **Unsubscribe** should either open its unsubscribe link or display the appropriate "no unsubscribe" message.
+
+The installation applies to the mailbox/account, so although you sideload through Outlook on the web, Microsoft says the add-in should also become available in supported Outlook desktop clients. In **classic Outlook for Windows**, Microsoft notes that a manually sideloaded add-in can occasionally take up to **24 hours** to appear because of caching. ([Microsoft Learn][2])
+
+[1]: https://github.com/awsles/unsubscribe/blob/main/manifest.xml "unsubscribe/manifest.xml at main · awsles/unsubscribe · GitHub"
+[2]: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/sideload-outlook-add-ins-for-testing?utm_source=chatgpt.com "Sideload Outlook add-ins for testing - Office Add-ins | Microsoft Learn"
