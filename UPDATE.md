@@ -1,21 +1,40 @@
-# Outlook Unsubscribe update 1.0.0.2
+# Outlook Unsubscribe v1.0.0.5
 
-Replace the repository-root `commands.js` and `commands.html` with the files in this package.
+## What changed
 
-Then update the existing `manifest.xml` (do not replace it with an older copy):
+This version adds an HTML-body fallback inspired by Microsoft's legacy Outlook Unsubscribe add-in.
 
-1. Change `<Version>1.0.0.1</Version>` to `<Version>1.0.0.2</Version>`.
-2. Recommended cache-buster: change the `Commands.Url` value to:
-   `https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.2`
-3. Commit/push the changes and wait for GitHub Pages to publish them.
-4. Remove the sideloaded 1.0.0.1 add-in and sideload the updated manifest.xml.
+Unsubscribe priority is now:
 
-Behavior priority:
-1. `List-Unsubscribe-Post: List-Unsubscribe=One-Click` + HTTPS URI -> HTTPS POST.
-2. HTTPS List-Unsubscribe URI -> open web unsubscribe.
-3. HTTP List-Unsubscribe URI -> open where supported.
-4. mailto List-Unsubscribe URI -> open a pre-addressed Outlook compose draft.
+1. `List-Unsubscribe-Post: List-Unsubscribe=One-Click` + HTTPS URL -> RFC 8058 POST.
+2. HTTPS URL in `List-Unsubscribe` -> open the unsubscribe page.
+3. HTTPS unsubscribe/opt-out link found in the message HTML -> open the link.
+4. HTTP URL in `List-Unsubscribe` -> open where the Outlook client permits it.
+5. HTTP unsubscribe/opt-out link found in the message HTML -> open where permitted.
+6. `mailto:` in `List-Unsubscribe` -> open a pre-addressed Outlook draft.
+7. Otherwise -> display `No unsubscribe method was found in this message.`
 
-The mailto draft preserves sender-provided recipient, subject, and body. It does not invent subject/body text when omitted.
+The HTML scanner examines anchor text, `aria-label`, `title`, descendant image `alt` text, and URL tokens. It only considers `http://` and `https://` links and prefers HTTPS. It includes multilingual unsubscribe terms patterned after Microsoft's legacy Outlook Unsubscribe add-in.
 
-Note: RFC 8058 also specifies DKIM validation requirements. This client-only update implements the one-click POST mechanics but does not independently cryptographically validate DKIM signatures.
+Failure to retrieve or parse the message body is non-fatal. The add-in continues to any available `mailto:` fallback.
+
+## Deploy
+
+Replace the repository-root files:
+
+- `commands.js`
+- `commands.html`
+
+Then update `manifest.xml`:
+
+```xml
+<Version>1.0.0.5</Version>
+```
+
+For each manifest URL that loads `commands.html`, use a v1.0.0.5 cache buster, for example:
+
+```xml
+https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.5
+```
+
+Commit/push the changes, wait for GitHub Pages to publish them, remove the currently sideloaded add-in, and sideload the updated manifest again.

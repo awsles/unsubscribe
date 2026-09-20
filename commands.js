@@ -3,6 +3,66 @@
 const NOTIFICATION_KEY = "unsubscribe-status";
 const ONE_CLICK_VALUE = "List-Unsubscribe=One-Click";
 
+// Strong unsubscribe phrases used when scanning links embedded in the message
+// body. This list includes the same kinds of multilingual terms used by
+// Microsoft's legacy Outlook Unsubscribe add-in, plus a few common English
+// variants. The scanner only considers http/https links.
+const UNSUBSCRIBE_TERMS = [
+  "unsubscribe",
+  "opt out",
+  "opt-out",
+  "cancel subscription",
+  "cancel my subscription",
+  "manage subscription",
+  "email preferences",
+  "manage email preferences",
+  "stop emails",
+  "darse de baja",
+  "cancelar la suscripción",
+  "désinscrire",
+  "desinscrire",
+  "désabonner",
+  "desabonner",
+  "abbestellen",
+  "abmelden",
+  "austragen",
+  "annullare l'iscrizione",
+  "cancellarsi",
+  "отписаться",
+  "отменить подписку",
+  "отказаться от подписки",
+  "退会",
+  "登録解除",
+  "取消订阅",
+  "终止订阅",
+  "退订",
+  "取消訂閱",
+  "終止訂閱",
+  "退訂",
+  "descadastrar",
+  "구독을 중단",
+  "구독을 취소",
+  "수신 가입을 취소",
+  "가입을 취소",
+  "إلغاء الاشتراك",
+  "الغاء الاشتراك",
+  "إلغاء الإشتراك",
+  "לבטל את המנוי",
+  "לבטל את הרישום",
+  "לבטל את ההרשמה",
+];
+
+const UNSUBSCRIBE_URL_TERMS = [
+  "unsubscribe",
+  "unsub",
+  "optout",
+  "opt-out",
+  "opt_out",
+  "email-preferences",
+  "email_preferences",
+  "subscription-preferences",
+];
+
 Office.onReady(() => {
   // Office.js is initialized and the function command can now be associated.
 });
@@ -13,9 +73,11 @@ Office.onReady(() => {
  * Priority:
  *   1. RFC 8058 one-click POST when List-Unsubscribe-Post is present and
  *      an HTTPS List-Unsubscribe URI is available.
- *   2. HTTPS web unsubscribe.
- *   3. HTTP web unsubscribe.
- *   4. mailto unsubscribe, composed in Outlook.
+ *   2. HTTPS List-Unsubscribe web URL.
+ *   3. HTTPS unsubscribe link embedded in the message body.
+ *   4. HTTP List-Unsubscribe web URL.
+ *   5. HTTP unsubscribe link embedded in the message body.
+ *   6. mailto List-Unsubscribe, composed in Outlook.
  */
 async function unsubscribe(event) {
   let stage = "initializing";
@@ -35,16 +97,17 @@ async function unsubscribe(event) {
     const listUnsubscribe = getHeaderValue(headers, "List-Unsubscribe");
     const listUnsubscribePost = getHeaderValue(headers, "List-Unsubscribe-Post");
 
-    if (!listUnsubscribe) {
-      safeShowInfo("No List-Unsubscribe header was found in this message.");
-      return;
-    }
+    let httpsUrl = null;
+    let httpUrl = null;
+    let mailto = null;
 
-    stage = "parsing unsubscribe methods";
-    const methods = parseUnsubscribeMethods(listUnsubscribe);
-    const httpsUrl = methods.find((value) => /^https:\/\//i.test(value));
-    const httpUrl = methods.find((value) => /^http:\/\//i.test(value));
-    const mailto = methods.find((value) => /^mailto:/i.test(value));
+    if (listUnsubscribe) {
+      stage = "parsing unsubscribe methods";
+      const methods = parseUnsubscribeMethods(listUnsubscribe);
+      httpsUrl = methods.find((value) => /^https:\/\//i.test(value)) || null;
+      httpUrl = methods.find((value) => /^http:\/\//i.test(value)) || null;
+      mailto = methods.find((value) => /^mailto:/i.test(value)) || null;
+    }
 
     if (httpsUrl && isOneClickPost(listUnsubscribePost)) {
       stage = "submitting RFC 8058 one-click POST";
@@ -54,16 +117,35 @@ async function unsubscribe(event) {
     }
 
     if (httpsUrl) {
-      stage = "opening HTTPS unsubscribe page";
+      stage = "opening HTTPS List-Unsubscribe page";
       safeClearStatus();
       await openWebUnsubscribe(httpsUrl);
       return;
     }
 
+    // Before falling back to HTTP or mailto, look for a usable web unsubscribe
+    // link in the message body. A visible HTTPS link is preferable to either.
+    stage = "scanning message body for unsubscribe links";
+    const bodyLinks = await findBodyUnsubscribeLinks(item);
+
+    if (bodyLinks.httpsUrl) {
+      stage = "opening HTTPS unsubscribe link from message body";
+      safeClearStatus();
+      await openWebUnsubscribe(bodyLinks.httpsUrl);
+      return;
+    }
+
     if (httpUrl) {
-      stage = "opening HTTP unsubscribe page";
+      stage = "opening HTTP List-Unsubscribe page";
       safeClearStatus();
       await openWebUnsubscribe(httpUrl);
+      return;
+    }
+
+    if (bodyLinks.httpUrl) {
+      stage = "opening HTTP unsubscribe link from message body";
+      safeClearStatus();
+      await openWebUnsubscribe(bodyLinks.httpUrl);
       return;
     }
 
@@ -74,7 +156,11 @@ async function unsubscribe(event) {
       return;
     }
 
-    safeShowInfo("A List-Unsubscribe header exists, but it contains no supported unsubscribe method.");
+    if (listUnsubscribe) {
+      safeShowInfo("A List-Unsubscribe header exists, but no usable unsubscribe method was found.");
+    } else {
+      safeShowInfo("No unsubscribe method was found in this message.");
+    }
   } catch (error) {
     console.error("Outlook Unsubscribe error at stage:", stage, error);
     const detail = getErrorText(error);
@@ -306,6 +392,141 @@ function textToSafeHtml(text) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;")
     .replace(/\r\n|\r|\n/g, "<br>");
+}
+
+
+/**
+ * Looks for unsubscribe links embedded in the current message body.
+ *
+ * Failure to read/parse the body is deliberately non-fatal. Header-based
+ * mailto unsubscribe can still be used if body inspection isn't available.
+ */
+async function findBodyUnsubscribeLinks(item) {
+  try {
+    if (!item.body || typeof item.body.getAsync !== "function") {
+      return { httpsUrl: null, httpUrl: null };
+    }
+
+    const html = await getMessageBodyHtml(item);
+    return scoreBodyUnsubscribeLinks(html);
+  } catch (error) {
+    console.warn("Unable to scan message body for unsubscribe links:", error);
+    return { httpsUrl: null, httpUrl: null };
+  }
+}
+
+function getMessageBodyHtml(item) {
+  return new Promise((resolve, reject) => {
+    item.body.getAsync(Office.CoercionType.Html, (result) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        resolve(result.value || "");
+      } else {
+        reject(result.error || new Error("body.getAsync failed"));
+      }
+    });
+  });
+}
+
+/**
+ * Parse all http/https anchors in the message and score their likelihood of
+ * being an unsubscribe control. The link text, accessibility labels, title,
+ * descendant image alt text, and URL itself are all considered.
+ */
+function scoreBodyUnsubscribeLinks(html) {
+  if (!html || typeof DOMParser === "undefined") {
+    return { httpsUrl: null, httpUrl: null };
+  }
+
+  const document = new DOMParser().parseFromString(String(html), "text/html");
+  const anchors = Array.from(document.querySelectorAll("a[href]"));
+  const candidates = [];
+
+  for (const anchor of anchors) {
+    const rawHref = (anchor.getAttribute("href") || "").trim();
+    if (!/^https?:\/\//i.test(rawHref)) {
+      continue;
+    }
+
+    const signalText = collectAnchorSignalText(anchor);
+    const score = scoreUnsubscribeCandidate(signalText, rawHref);
+    if (score <= 0) {
+      continue;
+    }
+
+    candidates.push({
+      url: rawHref,
+      score,
+      isHttps: /^https:\/\//i.test(rawHref),
+    });
+  }
+
+  // Highest confidence first. For equal scores, prefer HTTPS.
+  candidates.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (a.isHttps !== b.isHttps) return a.isHttps ? -1 : 1;
+    return 0;
+  });
+
+  const bestHttps = candidates.find((candidate) => candidate.isHttps);
+  const bestHttp = candidates.find((candidate) => !candidate.isHttps);
+
+  return {
+    httpsUrl: bestHttps ? bestHttps.url : null,
+    httpUrl: bestHttp ? bestHttp.url : null,
+  };
+}
+
+function collectAnchorSignalText(anchor) {
+  const parts = [
+    anchor.textContent || "",
+    anchor.getAttribute("aria-label") || "",
+    anchor.getAttribute("title") || "",
+  ];
+
+  for (const image of Array.from(anchor.querySelectorAll("img[alt]"))) {
+    parts.push(image.getAttribute("alt") || "");
+  }
+
+  return normalizeSearchText(parts.join(" "));
+}
+
+function scoreUnsubscribeCandidate(signalText, href) {
+  const text = normalizeSearchText(signalText);
+  const urlText = normalizeSearchText(safeDecodeURIComponent(String(href)));
+  let score = 0;
+
+  for (const term of UNSUBSCRIBE_TERMS) {
+    const normalizedTerm = normalizeSearchText(term);
+    if (!normalizedTerm) continue;
+
+    if (text === normalizedTerm) {
+      score = Math.max(score, 120);
+    } else if (text.includes(normalizedTerm)) {
+      score = Math.max(score, 100);
+    }
+  }
+
+  for (const term of UNSUBSCRIBE_URL_TERMS) {
+    if (urlText.includes(normalizeSearchText(term))) {
+      score = Math.max(score, 60);
+    }
+  }
+
+  // Favor HTTPS when everything else is equal without allowing protocol alone
+  // to turn an unrelated link into a candidate.
+  if (score > 0 && /^https:\/\//i.test(href)) {
+    score += 5;
+  }
+
+  return score;
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function getAllInternetHeaders(item) {

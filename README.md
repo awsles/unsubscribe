@@ -179,6 +179,61 @@ It chooses an unsubscribe method in this order:
 5. **No supported unsubscribe method**  
    If the message does not contain a usable unsubscribe header, Outlook displays a notification explaining that no unsubscribe method was found.
 
+
+### Behavior Flow
+
+                   User clicks Unsubscribe
+                           │
+                           ▼
+               Read Internet headers
+                           │
+          ┌────────────────┴────────────────┐
+          │                                 │
+ List-Unsubscribe-Post?                    No
+          │
+         Yes
+          │
+     HTTPS URL?
+          │
+         Yes ───────► RFC 8058 POST
+          │
+          No
+          ▼
+ List-Unsubscribe HTTPS?
+          │
+         Yes ───────► Open URL
+          │
+          No
+          ▼
+ Scan BodyAsHTML
+          │
+ unsubscribe HTTPS link?
+          │
+         Yes ───────► Open URL
+          │
+          No
+          ▼
+ List-Unsubscribe mailto?
+          │
+         Yes ───────► Compose Outlook email
+          │
+          No
+          ▼
+ "No unsubscribe method found"
+
+
+The v1.0.0.5 priority order is:
+
+1. List-Unsubscribe-Post + HTTPS → RFC 8058 POST
+1. HTTPS List-Unsubscribe → open URL
+1. HTTPS unsubscribe link found in message HTML → open URL
+1. HTTP List-Unsubscribe
+1. HTTP unsubscribe link found in message HTML
+1. mailto: → compose unsubscribe email
+1. Otherwise → “No unsubscribe method was found”
+
+The body scanner examines anchor text, aria-label, title, image alt text, and URL strings, and incorporates multilingual unsubscribe terminology modeled on Microsoft's legacy add-in manifest. It uses body.getAsync(...Html...), which is supported in Read mode with Mailbox 1.3 and ReadItem permissions, so your existing Mailbox 1.8 manifest already covers it.
+
 ### Example
 
 A message might contain:
@@ -253,6 +308,7 @@ https://awsles.github.io/unsubscribe/
 ### Update History
 
 - v1.0.0.4 -- *Initial Version*
+- v1.0.0.5 -- Add support for extracting Unsubscribe link from message body
 
 ## Microsoft documentation
 
