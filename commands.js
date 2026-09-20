@@ -262,7 +262,7 @@ function openInOfficeDialog(targetUrl) {
 
     Office.context.ui.displayDialogAsync(
       redirectUrl.toString(),
-      { height: 70, width: 55, displayInIframe: false },
+      { height: 70, width: 55, displayInIframe: false, promptBeforeOpen: false },
       (result) => {
         if (result.status === Office.AsyncResultStatus.Failed) {
           console.error("Unable to open unsubscribe dialog:", result.error);
