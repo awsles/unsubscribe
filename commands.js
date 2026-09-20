@@ -96,23 +96,37 @@ async function performOneClickUnsubscribe(url) {
   }
 
   if (typeof fetch !== "function") {
-    throw new Error("This Outlook web runtime does not support fetch().");
+    console.warn("fetch() is unavailable; falling back to the unsubscribe page.");
+    await openWebUnsubscribe(url);
+    return;
   }
 
-  await fetch(url, {
-    method: "POST",
-    mode: "no-cors",
-    credentials: "omit",
-    cache: "no-store",
-    redirect: "manual",
-    referrerPolicy: "no-referrer",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: ONE_CLICK_VALUE,
-  });
+  try {
+    // RFC 8058 permits application/x-www-form-urlencoded and requires that
+    // cookies / HTTP credentials not be sent.  Cross-origin unsubscribe
+    // endpoints generally don't expose CORS headers, so no-cors is used.
+    // IMPORTANT: Fetch requires redirect mode "follow" for no-cors requests;
+    // therefore we intentionally leave redirect at its default value.
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: ONE_CLICK_VALUE,
+    });
 
-  showInfo("One-click unsubscribe request submitted.");
+    showInfo("One-click unsubscribe request submitted.");
+  } catch (error) {
+    // Some Outlook/WebView environments or remote endpoints may still block
+    // a background cross-origin POST.  A manual GET to the same URI is the
+    // RFC 8058 fallback path for an ordinary unsubscribe operation.
+    console.error("One-click unsubscribe POST failed; opening unsubscribe page:", error);
+    showInfo("One-click unsubscribe could not be submitted automatically. Opening the unsubscribe page instead.");
+    await openWebUnsubscribe(url);
+  }
 }
 
 function openWebUnsubscribe(url) {
