@@ -15,9 +15,6 @@ does not display a page but simpy just accepts the unsubscribe action.
 You should only have to do this for each unique sender & subscription that you want to unsubscribe from.
 IT is best to choose the most recent email from that sender to use the unsubscribe button in.
 
-**LIMITATION:** This version only processes the unsubscribe options hidden in the message header.
-This does not [yet] extract any unsubscribe option within the message body.
-
 ## How long does it take to be unsubscribed?
 Many provides claim it can take days for an unsubscribe to take effect. And sadly, there are a few that simply ignore the requests.
 
