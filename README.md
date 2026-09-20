@@ -41,17 +41,16 @@ Note: RFC 8058 also specifies DKIM validation requirements. This client-only upd
 
 
 # Installing the add-in
-
 The add-in is currently installed by **sideloading** its `manifest.xml` file into Outlook.
+This is done by installing it using the WEB version of Outlook (often called OWA for Outlook Web Access). IF you install it here,
+it will eventually propagate to your tabel and desktop versions of Outlook.
 
 ## 1. Download `manifest.xml`
+Download the current manifest from the project repository in GitHub:
 
-Download the current manifest from the project repository:
-
-**GitHub:**  
 https://github.com/awsles/unsubscribe/blob/main/manifest.xml
 
-Open the file and choose **Download raw file**, then save it somewhere convenient on your PC, such as your **Downloads** folder.
+CLick the link to open the file and choose **Download raw file**, then save it somewhere convenient on your PC, such as your **Downloads** folder.
 
 You can also view the deployed copy here:
 
@@ -60,7 +59,6 @@ https://awsles.github.io/unsubscribe/manifest.xml
 Outlook requires a local XML file for manual sideloading; Microsoft's current sideloading interface no longer provides an **Add from URL** option.
 
 ## 2. Open the Outlook add-in sideloading page
-
 In a web browser, open:
 
 https://aka.ms/olksideload
@@ -70,7 +68,6 @@ Sign in with the **same Microsoft account/mailbox that you use in Outlook**.
 The **Add-Ins for Outlook** dialog should open.
 
 ## 3. Open My add-ins
-
 In the Add-Ins for Outlook dialog:
 
 1. Select **My add-ins**.
@@ -79,7 +76,6 @@ In the Add-Ins for Outlook dialog:
 4. Select **Add from File**.
 
 ## 4. Select the manifest
-
 Choose the `manifest.xml` file you downloaded in Step 1.
 
 Accept the installation/security prompts.
@@ -89,7 +85,6 @@ The add-in is now associated with your Outlook mailbox. Microsoft states that an
 > **Classic Outlook note:** A manually sideloaded add-in can occasionally take up to 24 hours to appear in classic Outlook because of client caching. New Outlook and Outlook on the web normally reflect the installation much sooner.
 
 ## 5. Find the Unsubscribe command
-
 Open a **received email message** in Outlook.
 
 ### New Outlook for Windows / Outlook on the web
@@ -101,12 +96,10 @@ Open a **received email message** in Outlook.
 You may be able to pin the command depending on your Outlook configuration.
 
 ### Classic Outlook for Windows
-
 Open a received message and look for the **Unsubscribe** command on the message's add-in/ribbon surface. If it does not appear immediately after installation, restart Outlook and allow time for its add-in cache to refresh.
 
 ## 6. Test it
-
-For the best test, open a legitimate newsletter or mailing-list message that provides a `List-Unsubscribe` header.
+For the best test, open a legitimate newsletter or mailing-list message that provides a `List-Unsubscribe` header (i.e., look for some junk mail).
 
 Select **Unsubscribe**.
 
@@ -146,8 +139,9 @@ To uninstall the sideloaded add-in:
 
 
 ---
+## TECHNICAL INFO
 
-## What the add-in does (technical)
+### What the add-in does
 
 When you open a message and select **Unsubscribe**, the add-in reads the message's Internet headers using the Outlook Office.js API and looks for the standard `List-Unsubscribe` and `List-Unsubscribe-Post` headers.
 
@@ -242,7 +236,6 @@ You need:
 - Internet access, because Outlook web add-ins load their runtime files over HTTPS.
 
 > **Note:** Outlook can connect to accounts such as Gmail and Yahoo, but Outlook add-ins are not supported for those non-Microsoft accounts in Outlook on Windows or Outlook on the web.
-
 
 
 ## Source code
