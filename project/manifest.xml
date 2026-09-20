@@ -11,12 +11,12 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Outlook Unsubscribe"/>
   <Description DefaultValue="Opens a message's List-Unsubscribe web link, when one is available."/>
-  <IconUrl DefaultValue="https://awsles.github.io/unsubscribe/assets/icon-64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://awsles.github.io/unsubscribe/assets/icon-128.png"/>
-  <SupportUrl DefaultValue="https://awsles.github.io/unsubscribe/support.html"/>
+  <IconUrl DefaultValue="https://awsles.github.io/unsubscribe/project/assets/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://awsles.github.io/unsubscribe/project/assets/icon-128.png"/>
+  <SupportUrl DefaultValue="https://awsles.github.io/unsubscribe/project/support.html"/>
 
   <AppDomains>
-    <AppDomain>https://awsles.github.io/unsubscribe</AppDomain>
+    <AppDomain>https://awsles.github.io</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -33,7 +33,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://awsles.github.io/unsubscribe/commands.html"/>
+        <SourceLocation DefaultValue="https://awsles.github.io/unsubscribe/project/commands.html"/>
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -87,13 +87,13 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://awsles.github.io/unsubscribe/assets/icon-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://awsles.github.io/unsubscribe/assets/icon-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://awsles.github.io/unsubscribe/assets/icon-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://awsles.github.io/unsubscribe/project/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://awsles.github.io/unsubscribe/project/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://awsles.github.io/unsubscribe/project/assets/icon-80.png"/>
       </bt:Images>
 
       <bt:Urls>
-        <bt:Url id="Commands.Url" DefaultValue="https://awsles.github.io/unsubscribe/commands.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://awsles.github.io/unsubscribe/project/commands.html"/>
       </bt:Urls>
 
       <bt:ShortStrings>
