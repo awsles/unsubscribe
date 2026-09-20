@@ -1,6 +1,7 @@
 /* global Office */
 
 const NOTIFICATION_KEY = "unsubscribe-status";
+const ONE_CLICK_VALUE = "List-Unsubscribe=One-Click";
 
 Office.onReady(() => {
   // Office.js is initialized and the function command can now be associated.
@@ -8,13 +9,17 @@ Office.onReady(() => {
 
 /**
  * Ribbon command invoked when the user clicks Unsubscribe.
- * Reads the complete MIME headers from the current message and opens the
- * first HTTP(S) URI advertised by List-Unsubscribe.
+ *
+ * Priority:
+ *   1. RFC 8058 one-click POST when List-Unsubscribe-Post is present and
+ *      an HTTPS List-Unsubscribe URI is available.
+ *   2. HTTPS web unsubscribe.
+ *   3. HTTP web unsubscribe.
+ *   4. mailto unsubscribe, composed in Outlook.
  */
 async function unsubscribe(event) {
   try {
     const item = Office.context.mailbox.item;
-
     if (!item || typeof item.getAllInternetHeadersAsync !== "function") {
       showError("This Outlook client can't read message internet headers.");
       return;
@@ -22,6 +27,7 @@ async function unsubscribe(event) {
 
     const headers = await getAllInternetHeaders(item);
     const listUnsubscribe = getHeaderValue(headers, "List-Unsubscribe");
+    const listUnsubscribePost = getHeaderValue(headers, "List-Unsubscribe-Post");
 
     if (!listUnsubscribe) {
       showInfo("No List-Unsubscribe header was found in this message.");
@@ -29,31 +35,85 @@ async function unsubscribe(event) {
     }
 
     const methods = parseUnsubscribeMethods(listUnsubscribe);
-    const webUrl = methods.find((value) => /^https:\/\//i.test(value)) ||
-                   methods.find((value) => /^http:\/\//i.test(value));
-
-    if (webUrl) {
-      clearStatus();
-      await openWebUnsubscribe(webUrl);
-      return;
-    }
-
+    const httpsUrl = methods.find((value) => /^https:\/\//i.test(value));
+    const httpUrl = methods.find((value) => /^http:\/\//i.test(value));
     const mailto = methods.find((value) => /^mailto:/i.test(value));
-    if (mailto) {
-      showInfo("This message offers email-based unsubscribe, but no web unsubscribe link.");
+
+    // RFC 8058 one-click unsubscribe requires an HTTPS URI and the exact
+    // List-Unsubscribe-Post instruction. The user's button click is the
+    // explicit consent required before sending the POST.
+    if (httpsUrl && isOneClickPost(listUnsubscribePost)) {
+      clearStatus();
+      await performOneClickUnsubscribe(httpsUrl);
       return;
     }
 
-    showInfo("A List-Unsubscribe header exists, but it contains no usable web link.");
+    if (httpsUrl) {
+      clearStatus();
+      await openWebUnsubscribe(httpsUrl);
+      return;
+    }
+
+    if (httpUrl) {
+      clearStatus();
+      await openWebUnsubscribe(httpUrl);
+      return;
+    }
+
+    // Only use email-based unsubscribe when there is no web alternative.
+    if (mailto) {
+      clearStatus();
+      composeMailtoUnsubscribe(mailto);
+      return;
+    }
+
+    showInfo("A List-Unsubscribe header exists, but it contains no supported unsubscribe method.");
   } catch (error) {
     console.error("Outlook Unsubscribe error:", error);
-    showError("Unable to inspect this message for an unsubscribe link.");
+    showError("Unable to process this message's unsubscribe information.");
   } finally {
     // Outlook requires every ExecuteFunction command to signal completion.
     event.completed();
   }
 }
 
+function isOneClickPost(value) {
+  return typeof value === "string" &&
+    value.trim().toLowerCase() === ONE_CLICK_VALUE.toLowerCase();
+}
+
+/**
+ * Sends the RFC 8058 one-click POST.
+ *
+ * no-cors is intentional: unsubscribe endpoints generally don't expose CORS
+ * response headers. The request can still be sent, but the response is opaque,
+ * so the add-in cannot truthfully claim that the remote server confirmed it.
+ * credentials:"omit" ensures cookies and HTTP credentials are not sent.
+ */
+async function performOneClickUnsubscribe(url) {
+  if (!/^https:\/\//i.test(url)) {
+    throw new Error("RFC 8058 one-click unsubscribe requires HTTPS.");
+  }
+
+  if (typeof fetch !== "function") {
+    throw new Error("This Outlook web runtime does not support fetch().");
+  }
+
+  await fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    credentials: "omit",
+    cache: "no-store",
+    redirect: "manual",
+    referrerPolicy: "no-referrer",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: ONE_CLICK_VALUE,
+  });
+
+  showInfo("One-click unsubscribe request submitted.");
+}
 
 function openWebUnsubscribe(url) {
   const canOpenExternalBrowser =
@@ -98,6 +158,126 @@ function openInOfficeDialog(targetUrl) {
       }
     );
   });
+}
+
+/**
+ * Opens a new Outlook compose form for a mailto: List-Unsubscribe method.
+ * The mailto URI controls the recipient, subject and body. We intentionally
+ * don't invent subject/body text when the URI doesn't provide it because
+ * automated list processors may rely on the exact values supplied by the
+ * sender.
+ */
+function composeMailtoUnsubscribe(mailtoUri) {
+  const message = parseMailtoUri(mailtoUri);
+
+  if (!message.toRecipients.length) {
+    throw new Error("The mailto unsubscribe method does not contain a recipient.");
+  }
+
+  const form = {
+    toRecipients: message.toRecipients,
+  };
+
+  if (message.subject !== null) {
+    form.subject = message.subject;
+  }
+
+  if (message.body !== null) {
+    form.htmlBody = textToSafeHtml(message.body);
+  }
+
+  Office.context.mailbox.displayNewMessageForm(form);
+}
+
+/**
+ * Parses the RFC 6068 pieces we need from a mailto URI.
+ * Supports recipients in both the URI path and a ?to= field, plus subject
+ * and body. Other headers are intentionally ignored.
+ */
+function parseMailtoUri(uri) {
+  if (!/^mailto:/i.test(uri)) {
+    throw new Error("Not a mailto URI.");
+  }
+
+  const raw = uri.slice(uri.indexOf(":") + 1);
+  const questionMark = raw.indexOf("?");
+  const rawTo = questionMark >= 0 ? raw.slice(0, questionMark) : raw;
+  const rawQuery = questionMark >= 0 ? raw.slice(questionMark + 1) : "";
+
+  const recipients = decodeRecipientList(rawTo);
+  let subject = null;
+  let body = null;
+
+  if (rawQuery) {
+    for (const field of rawQuery.split("&")) {
+      if (!field) continue;
+
+      const equals = field.indexOf("=");
+      const rawName = equals >= 0 ? field.slice(0, equals) : field;
+      const rawValue = equals >= 0 ? field.slice(equals + 1) : "";
+      const name = safeDecodeURIComponent(rawName).toLowerCase();
+      const value = safeDecodeURIComponent(rawValue);
+
+      if (name === "to") {
+        recipients.push(...decodeRecipientList(rawValue));
+      } else if (name === "subject" && subject === null) {
+        subject = value;
+      } else if (name === "body" && body === null) {
+        body = value;
+      }
+    }
+  }
+
+  return {
+    toRecipients: dedupeStrings(recipients),
+    subject,
+    body,
+  };
+}
+
+function decodeRecipientList(rawValue) {
+  if (!rawValue) return [];
+
+  return rawValue
+    .split(",")
+    .map((value) => safeDecodeURIComponent(value.trim()))
+    .filter(Boolean);
+}
+
+function safeDecodeURIComponent(value) {
+  try {
+    // decodeURIComponent correctly leaves literal '+' characters unchanged,
+    // which is important for mailto addresses such as user+tag@example.com.
+    return decodeURIComponent(value);
+  } catch (error) {
+    console.warn("Unable to decode mailto component:", value, error);
+    return value;
+  }
+}
+
+function dedupeStrings(values) {
+  const seen = new Set();
+  const output = [];
+
+  for (const value of values) {
+    const key = value.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      output.push(value);
+    }
+  }
+
+  return output;
+}
+
+function textToSafeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/\r\n|\r|\n/g, "<br>");
 }
 
 function getAllInternetHeaders(item) {
