@@ -18,62 +18,76 @@ Office.onReady(() => {
  *   4. mailto unsubscribe, composed in Outlook.
  */
 async function unsubscribe(event) {
+  let stage = "initializing";
+
   try {
+    stage = "getting current message";
     const item = Office.context.mailbox.item;
     if (!item || typeof item.getAllInternetHeadersAsync !== "function") {
-      showError("This Outlook client can't read message internet headers.");
+      safeShowError("This Outlook client can't read message internet headers.");
       return;
     }
 
+    stage = "reading internet headers";
     const headers = await getAllInternetHeaders(item);
+
+    stage = "parsing List-Unsubscribe headers";
     const listUnsubscribe = getHeaderValue(headers, "List-Unsubscribe");
     const listUnsubscribePost = getHeaderValue(headers, "List-Unsubscribe-Post");
 
     if (!listUnsubscribe) {
-      showInfo("No List-Unsubscribe header was found in this message.");
+      safeShowInfo("No List-Unsubscribe header was found in this message.");
       return;
     }
 
+    stage = "parsing unsubscribe methods";
     const methods = parseUnsubscribeMethods(listUnsubscribe);
     const httpsUrl = methods.find((value) => /^https:\/\//i.test(value));
     const httpUrl = methods.find((value) => /^http:\/\//i.test(value));
     const mailto = methods.find((value) => /^mailto:/i.test(value));
 
-    // RFC 8058 one-click unsubscribe requires an HTTPS URI and the exact
-    // List-Unsubscribe-Post instruction. The user's button click is the
-    // explicit consent required before sending the POST.
     if (httpsUrl && isOneClickPost(listUnsubscribePost)) {
-      clearStatus();
+      stage = "submitting RFC 8058 one-click POST";
+      safeClearStatus();
       await performOneClickUnsubscribe(httpsUrl);
       return;
     }
 
     if (httpsUrl) {
-      clearStatus();
+      stage = "opening HTTPS unsubscribe page";
+      safeClearStatus();
       await openWebUnsubscribe(httpsUrl);
       return;
     }
 
     if (httpUrl) {
-      clearStatus();
+      stage = "opening HTTP unsubscribe page";
+      safeClearStatus();
       await openWebUnsubscribe(httpUrl);
       return;
     }
 
-    // Only use email-based unsubscribe when there is no web alternative.
     if (mailto) {
-      clearStatus();
+      stage = "composing mailto unsubscribe message";
+      safeClearStatus();
       composeMailtoUnsubscribe(mailto);
       return;
     }
 
-    showInfo("A List-Unsubscribe header exists, but it contains no supported unsubscribe method.");
+    safeShowInfo("A List-Unsubscribe header exists, but it contains no supported unsubscribe method.");
   } catch (error) {
-    console.error("Outlook Unsubscribe error:", error);
-    showError("Unable to process this message's unsubscribe information.");
+    console.error("Outlook Unsubscribe error at stage:", stage, error);
+    const detail = getErrorText(error);
+    const message = (`Unsubscribe failed while ${stage}: ${detail}`).slice(0, 145);
+    safeShowError(message);
   } finally {
-    // Outlook requires every ExecuteFunction command to signal completion.
-    event.completed();
+    try {
+      if (event && typeof event.completed === "function") {
+        event.completed();
+      }
+    } catch (completionError) {
+      console.error("Unable to complete Outlook command event:", completionError);
+    }
   }
 }
 
@@ -118,13 +132,13 @@ async function performOneClickUnsubscribe(url) {
       body: ONE_CLICK_VALUE,
     });
 
-    showInfo("One-click unsubscribe request submitted.");
+    safeShowInfo("One-click unsubscribe request submitted.");
   } catch (error) {
     // Some Outlook/WebView environments or remote endpoints may still block
     // a background cross-origin POST.  A manual GET to the same URI is the
     // RFC 8058 fallback path for an ordinary unsubscribe operation.
     console.error("One-click unsubscribe POST failed; opening unsubscribe page:", error);
-    showInfo("One-click unsubscribe could not be submitted automatically. Opening the unsubscribe page instead.");
+    safeShowInfo("One-click unsubscribe could not be submitted automatically. Opening the unsubscribe page instead.");
     await openWebUnsubscribe(url);
   }
 }
@@ -149,7 +163,7 @@ function openWebUnsubscribe(url) {
     return openInOfficeDialog(url);
   }
 
-  showInfo(
+  safeShowInfo(
     "This Outlook client can't open this HTTP unsubscribe link automatically. Copy/open it manually."
   );
   return Promise.resolve();
@@ -166,7 +180,7 @@ function openInOfficeDialog(targetUrl) {
       (result) => {
         if (result.status === Office.AsyncResultStatus.Failed) {
           console.error("Unable to open unsubscribe dialog:", result.error);
-          showError("Outlook couldn't open the unsubscribe page.");
+          safeShowError("Outlook couldn't open the unsubscribe page.");
         }
         resolve();
       }
@@ -350,6 +364,42 @@ function parseUnsubscribeMethods(headerValue) {
 
 function isAllowedMethod(value) {
   return /^(https?:\/\/|mailto:)/i.test(value);
+}
+
+function getErrorText(error) {
+  if (!error) return "unknown error";
+  if (typeof error === "string") return error;
+  if (error.message) return String(error.message);
+  if (error.name) return String(error.name);
+  try {
+    return JSON.stringify(error);
+  } catch (_) {
+    return "unknown error";
+  }
+}
+
+function safeShowInfo(message) {
+  try {
+    showInfo(message);
+  } catch (error) {
+    console.error("Unable to display informational notification:", error);
+  }
+}
+
+function safeShowError(message) {
+  try {
+    showError(message);
+  } catch (error) {
+    console.error("Unable to display error notification:", error);
+  }
+}
+
+function safeClearStatus() {
+  try {
+    clearStatus();
+  } catch (error) {
+    console.error("Unable to clear prior notification:", error);
+  }
 }
 
 function showInfo(message) {
