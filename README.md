@@ -1,32 +1,37 @@
-# Outlook Unsubscribe add-in
+# Outlook Unsubscribe — GitHub Pages deployment
 
-A small Outlook web add-in that reads the current message's `List-Unsubscribe` MIME header. If the header advertises an HTTP or HTTPS URI, clicking **Unsubscribe** opens that URI in the system browser. If no web URI is available, the add-in displays an Outlook notification instead.
+This folder contains the static files required by the Outlook add-in manifest and its runtime dependencies.
 
-## Ready-to-host build
+Expected GitHub Pages base URL:
 
-A prebuilt copy of the static web assets is included in `dist\`. You can host that folder directly over HTTPS, or regenerate it later with `npm run build`.
+    https://awsles.github.io/unsubscribe/
 
-## Windows 11 instructions
+Files referenced directly by `manifest.xml`:
 
-- Development/build: see `BUILD-WINDOWS11.md`
-- Installation/sideloading: see `INSTALL-WINDOWS11.md`
+- `commands.html`
+- `support.html`
+- `assets/icon-16.png`
+- `assets/icon-32.png`
+- `assets/icon-64.png`
+- `assets/icon-80.png`
+- `assets/icon-128.png`
 
-## What the add-in does
+Additional runtime files required by the implementation:
 
-1. Adds an **Unsubscribe** command to received-message read surfaces.
-2. Calls `getAllInternetHeadersAsync()` on the current message.
-3. Unfolds and finds `List-Unsubscribe`.
-4. Prefers an HTTPS URI, then HTTP.
-5. In classic Outlook for Windows, opens the URI with `Office.context.ui.openBrowserWindow()`.
-6. In new Outlook for Windows / Outlook on the web, falls back to a same-origin Office dialog redirect for HTTPS links.
-7. If no web URI is present, displays an Outlook notification.
+- `commands.js` — loaded by `commands.html`
+- `redirect.html` — used as the HTTPS redirect bridge in clients without `OpenBrowserWindowApi 1.1`
 
-## What it intentionally does not do yet
+## Publish with GitHub Pages
 
-- It does not perform RFC 8058 `List-Unsubscribe-Post: List-Unsubscribe=One-Click` POST requests.
-- It does not automatically send mail to a `mailto:` unsubscribe address.
-- It does not dynamically grey/change the Outlook ribbon button based on the current message header; Outlook does not provide the required dynamic command-state API for this scenario.
+1. Copy these files to the root of the `awsles/unsubscribe` repository.
+2. In GitHub, open **Settings > Pages**.
+3. Under **Build and deployment**, select **Deploy from a branch**.
+4. Select the branch you use (normally `main`) and folder `/ (root)`.
+5. Save and wait for Pages to publish.
+6. Verify that this URL loads in a browser:
 
-## Security behavior
+       https://awsles.github.io/unsubscribe/commands.html
 
-The parser only accepts `https://`, `http://`, and `mailto:` methods from the header. Only HTTP(S) methods are opened in the browser. Other URI schemes are ignored.
+7. Sideload the included `manifest.xml` into Outlook.
+
+If you deploy the static files somewhere other than GitHub Pages, replace every occurrence of `https://awsles.github.io/unsubscribe` in `manifest.xml` with your HTTPS origin/path.
