@@ -15,6 +15,9 @@ does not display a page but simpy just accepts the unsubscribe action.
 You should only have to do this for each unique sender & subscription that you want to unsubscribe from.
 IT is best to choose the most recent email from that sender to use the unsubscribe button in.
 
+**LIMITATION:** This version only processes the unsubscribe options hidden in the message header.
+This does not [yet] extract any unsubscribe option within the message body.
+
 ## How long does it take to be unsubscribed?
 Many provides claim it can take days for an unsubscribe to take effect. And sadly, there are a few that simply ignore the requests.
 
@@ -64,6 +67,7 @@ In a web browser, open:
 https://aka.ms/olksideload
 
 Sign in with the **same Microsoft account/mailbox that you use in Outlook**.
+Give the page a moment to fully load the "Add-Ins for Outlook" popup window.
 
 The **Add-Ins for Outlook** dialog should open.
 
@@ -132,7 +136,7 @@ The manifest's `<Version>` value can be used to verify that you have the expecte
 
 To uninstall the sideloaded add-in:
 
-1. Open https://aka.ms/olksideload.
+1. Open https://aka.ms/olksideload 
 2. Select **My add-ins**.
 3. Locate **Outlook Unsubscribe** under your custom add-ins.
 4. Remove the add-in.
@@ -241,12 +245,14 @@ You need:
 ## Source code
 
 Project repository:
-
 https://github.com/awsles/unsubscribe/
 
 Hosted add-in files:
-
 https://awsles.github.io/unsubscribe/
+
+### Update History
+
+- v1.0.0.4 -- *Initial Version*
 
 ## Microsoft documentation
 
