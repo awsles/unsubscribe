@@ -255,6 +255,7 @@ function openWebUnsubscribe(url) {
   return Promise.resolve();
 }
 
+// Do not add promptbeforeOpen:false as it will fail
 function openInOfficeDialog(targetUrl) {
   return new Promise((resolve) => {
     const redirectUrl = new URL("redirect.html", window.location.href);
@@ -262,7 +263,7 @@ function openInOfficeDialog(targetUrl) {
 
     Office.context.ui.displayDialogAsync(
       redirectUrl.toString(),
-      { height: 70, width: 55, displayInIframe: false, promptBeforeOpen: false },
+      { height: 70, width: 55, displayInIframe: false },
       (result) => {
         if (result.status === Office.AsyncResultStatus.Failed) {
           console.error("Unable to open unsubscribe dialog:", result.error);

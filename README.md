@@ -307,6 +307,7 @@ https://awsles.github.io/unsubscribe/
 - v1.0.0.4 -- *Initial Version*
 - v1.0.0.5 -- Add support for extracting Unsubscribe link from message body
 - v1.0.0.6 -- Add promptBeforeOpen:false in Office.context.ui.displayDialogAsync() to eliminate "Outlook Unsubscribe wants to display a new window."
+- v1.0.0.7 -- Rolled back v1.0.0.6 changes
 
 ## Microsoft documentation
 
