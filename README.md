@@ -309,6 +309,12 @@ https://awsles.github.io/unsubscribe/
 - v1.0.0.6 -- Add promptBeforeOpen:false in Office.context.ui.displayDialogAsync() to eliminate "Outlook Unsubscribe wants to display a new window."
 - v1.0.0.7 -- Rolled back v1.0.0.6 changes
 
+### Known Issues
+
+1. Outlook does not load the icon for the add-in.  Unsure why.
+1. Users have to accept "Outlook Unsubscribe wants to display a new window." in some cases. If promptBeforeOpen:false is added to Office.context.ui.displayDialogAsync(), then the window open fails.  Not sure if there is another work-around.
+1. Extraction of embedded Unsubscribe links is based on keywords, so it can miss some.
+
 ## Microsoft documentation
 
 For additional details, see Microsoft's documentation:
