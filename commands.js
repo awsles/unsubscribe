@@ -152,7 +152,7 @@ async function unsubscribe(event) {
     if (mailto) {
       stage = "composing mailto unsubscribe message";
       safeClearStatus();
-      composeMailtoUnsubscribe(mailto, headers, item);
+      await composeMailtoUnsubscribe(mailto, headers, item);
       return;
     }
 
@@ -286,7 +286,7 @@ function openInOfficeDialog(targetUrl) {
  * other writable From field. If Outlook doesn't automatically select an alias,
  * the user must select it in the draft before sending.
  */
-function composeMailtoUnsubscribe(mailtoUri, rawHeaders, item) {
+async function composeMailtoUnsubscribe(mailtoUri, rawHeaders, item) {
   const message = parseMailtoUri(mailtoUri);
 
   if (!message.toRecipients.length) {
@@ -308,7 +308,33 @@ function composeMailtoUnsubscribe(mailtoUri, rawHeaders, item) {
     ),
   };
 
-  Office.context.mailbox.displayNewMessageForm(form);
+  await openNewMessageForm(form);
+}
+
+/**
+ * Uses the callback-based compose API where available so an ExecuteFunction
+ * command remains alive until Outlook has created the draft. This is required
+ * for reliable behavior in Outlook on the web. Older clients fall back to the
+ * synchronous Mailbox 1.6 API.
+ */
+function openNewMessageForm(form) {
+  const mailbox = Office.context.mailbox;
+
+  if (typeof mailbox.displayNewMessageFormAsync === "function") {
+    return new Promise((resolve, reject) => {
+      mailbox.displayNewMessageFormAsync(form, (result) => {
+        if (result.status === Office.AsyncResultStatus.Failed) {
+          reject(result.error || new Error("Outlook couldn't open the unsubscribe draft."));
+          return;
+        }
+
+        resolve();
+      });
+    });
+  }
+
+  mailbox.displayNewMessageForm(form);
+  return Promise.resolve();
 }
 
 /**

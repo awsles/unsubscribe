@@ -23,9 +23,9 @@ Replace the repository-root `commands.js` and `commands.html` with the files in 
 
 Then update the existing `manifest.xml` (do not replace it with an older copy):
 
-1. Set the manifest version to `<Version>1.0.0.8</Version>`.
+1. Set the manifest version to `<Version>1.0.0.9</Version>`.
 2. Recommended cache-buster: change the `Commands.Url` value to:
-   `https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.8`
+   `https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.9`
 3. Commit/push the changes and wait for GitHub Pages to publish them.
 4. Remove the previously sideloaded add-in and sideload the updated manifest.xml.
 
@@ -323,6 +323,7 @@ https://awsles.github.io/unsubscribe/
 - v1.0.0.6 -- Add promptBeforeOpen:false in Office.context.ui.displayDialogAsync() to eliminate "Outlook Unsubscribe wants to display a new window."
 - v1.0.0.7 -- Rolled back v1.0.0.6 changes
 - v1.0.0.8 -- Standardize mailto unsubscribe drafts and identify the original recipient in the body
+- v1.0.0.9 -- Wait for Outlook to open mailto drafts before completing the command
 
 ### Known Issues
 

@@ -1,8 +1,13 @@
-# Outlook Unsubscribe v1.0.0.8
+# Outlook Unsubscribe v1.0.0.9
 
 ## What changed
 
-This version updates email-based (`mailto:`) unsubscribe drafts:
+This version fixes email-based (`mailto:`) unsubscribe drafts in Outlook on the
+web. The add-in now uses `displayNewMessageFormAsync()` when available and waits
+for Outlook to report success or failure before completing the ribbon command.
+Older clients retain the synchronous fallback.
+
+The v1.0.0.8 email draft behavior is retained:
 
 - The recipient continues to come from the `mailto:` URI.
 - A sender-provided `subject=` value is preserved, including an explicitly
@@ -46,13 +51,13 @@ Replace the repository-root files:
 Then update `manifest.xml`:
 
 ```xml
-<Version>1.0.0.8</Version>
+<Version>1.0.0.9</Version>
 ```
 
-For each manifest URL that loads `commands.html`, use a v1.0.0.8 cache buster, for example:
+For each manifest URL that loads `commands.html`, use a v1.0.0.9 cache buster, for example:
 
 ```xml
-https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.8
+https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.9
 ```
 
 Commit/push the changes, wait for GitHub Pages to publish them, remove the currently sideloaded add-in, and sideload the updated manifest again.
