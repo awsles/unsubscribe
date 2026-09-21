@@ -1,8 +1,17 @@
-# Outlook Unsubscribe v1.0.0.10
+# Outlook Unsubscribe v1.0.0.11
 
 ## What changed
 
-This version adds Outlook mobile support:
+This version improves message-body unsubscribe detection on desktop, web, and mobile:
+
+- Examines up to 150 characters immediately before and after each hyperlink.
+- Associates adjacent unsubscribe wording only with the nearest hyperlink by
+  stopping at neighboring links.
+- Detects patterns such as `To unsubscribe, click here` and `Click here to
+  unsubscribe` without using generic `click here` text as a signal by itself.
+- Gives direct unsubscribe anchor text precedence over adjacent-text matches.
+
+The Outlook mobile support added in v1.0.0.10 is retained:
 
 - Sets both the VersionOverrides 1.0 and nested VersionOverrides 1.1 minimum
   Mailbox requirement to 1.5, as required by Microsoft's manifest validator.
@@ -64,14 +73,14 @@ Replace the repository-root files:
 Then update `manifest.xml`:
 
 ```xml
-<Version>1.0.0.10</Version>
+<Version>1.0.0.11</Version>
 ```
 
-For each manifest URL that loads JavaScript, use a v1.0.0.10 cache buster, for example:
+For each manifest URL that loads JavaScript, use a v1.0.0.11 cache buster, for example:
 
 ```xml
-https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.10
-https://awsles.github.io/unsubscribe/mobile.html?v=1.0.0.10
+https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.11
+https://awsles.github.io/unsubscribe/mobile.html?v=1.0.0.11
 ```
 
 Commit/push the changes, wait for GitHub Pages to publish them, remove the currently sideloaded add-in, and sideload the updated manifest again.

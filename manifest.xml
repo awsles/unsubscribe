@@ -6,7 +6,7 @@
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
   xsi:type="MailApp">
   <Id>6f2a4a42-e7c7-4b45-82b6-15a2c24f0cd7</Id>
-  <Version>1.0.0.10</Version>
+  <Version>1.0.0.11</Version>
   <ProviderName>awsles</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Outlook Unsubscribe"/>
@@ -33,7 +33,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.10"/>
+        <SourceLocation DefaultValue="https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.11"/>
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -93,7 +93,7 @@
       </bt:Images>
 
       <bt:Urls>
-        <bt:Url id="Commands.Url" DefaultValue="https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.10"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.11"/>
       </bt:Urls>
 
       <bt:ShortStrings>
@@ -181,8 +181,8 @@
         </bt:Images>
 
         <bt:Urls>
-          <bt:Url id="Commands.Url" DefaultValue="https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.10"/>
-          <bt:Url id="Mobile.Url" DefaultValue="https://awsles.github.io/unsubscribe/mobile.html?v=1.0.0.10"/>
+          <bt:Url id="Commands.Url" DefaultValue="https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.11"/>
+          <bt:Url id="Mobile.Url" DefaultValue="https://awsles.github.io/unsubscribe/mobile.html?v=1.0.0.11"/>
         </bt:Urls>
 
         <bt:ShortStrings>

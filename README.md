@@ -28,9 +28,9 @@ including `commands.js`, `commands.html`, `mobile.js`, `mobile.html`, and
 
 Then update the existing `manifest.xml` (do not replace it with an older copy):
 
-1. Set the manifest version to `<Version>1.0.0.10</Version>`.
+1. Set the manifest version to `<Version>1.0.0.11</Version>`.
 2. Recommended cache-buster: change the `Commands.Url` value to:
-   `https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.10`
+   `https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.11`
 3. Commit/push the changes and wait for GitHub Pages to publish them.
 4. Remove the previously sideloaded add-in and sideload the updated manifest.xml.
 
@@ -243,7 +243,7 @@ The current priority order is:
 1. mailto: → compose unsubscribe email
 1. Otherwise → “No unsubscribe method was found”
 
-The body scanner examines anchor text, aria-label, title, image alt text, and URL strings, and incorporates multilingual unsubscribe terminology modeled on Microsoft's legacy add-in manifest. It uses body.getAsync(...Html...), which is supported in Read mode with Mailbox 1.3 and ReadItem permissions, so the Mailbox 1.5 manifest requirement covers it.
+The body scanner examines anchor text, aria-label, title, image alt text, URL strings, and up to 150 characters immediately before and after each hyperlink. Adjacent text stops at neighboring hyperlinks, so wording such as “To unsubscribe, click here” identifies the nearby link without treating generic “click here” text as an unsubscribe signal. The scanner incorporates multilingual unsubscribe terminology modeled on Microsoft's legacy add-in manifest. It uses body.getAsync(...Html...), which is supported in Read mode with Mailbox 1.3 and ReadItem permissions, so the Mailbox 1.5 manifest requirement covers it.
 
 ### Example
 
@@ -337,6 +337,7 @@ https://awsles.github.io/unsubscribe/
 - v1.0.0.8 -- Standardize mailto unsubscribe drafts and identify the original recipient in the body
 - v1.0.0.9 -- Wait for Outlook to open mailto drafts before completing the command
 - v1.0.0.10 -- Add Outlook mobile command surface and mobile unsubscribe task pane
+- v1.0.0.11 -- Detect unsubscribe wording immediately before or after a hyperlink
 
 ### Known Issues
 

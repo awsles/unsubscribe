@@ -171,12 +171,14 @@ function chooseBodyMethod(html, originalRecipient) {
   const parsed = new DOMParser().parseFromString(String(html), "text/html");
   const candidates = [];
 
-  for (const anchor of Array.from(parsed.querySelectorAll("a[href]"))) {
+  const anchors = Array.from(parsed.querySelectorAll("a[href]"));
+  for (const anchor of anchors) {
     const href = (anchor.getAttribute("href") || "").trim();
     if (!/^(https?:\/\/|mailto:)/i.test(href)) continue;
 
     const signalText = collectAnchorSignalText(anchor);
-    const score = scoreUnsubscribeCandidate(signalText, href);
+    const adjacentText = collectAdjacentAnchorText(anchor, anchors);
+    const score = scoreUnsubscribeCandidate(signalText, href, adjacentText);
     if (score <= 0) continue;
 
     candidates.push({ href, score, rank: protocolRank(href) });
@@ -211,7 +213,55 @@ function collectAnchorSignalText(anchor) {
   return normalizeSearchText(parts.join(" "));
 }
 
-function scoreUnsubscribeCandidate(signalText, href) {
+/**
+ * Collect bounded text before and after an anchor, stopping at neighboring
+ * hyperlinks. This associates an unsubscribe phrase with the nearest link
+ * while ensuring generic text such as "click here" isn't a signal by itself.
+ */
+function collectAdjacentAnchorText(anchor, anchors, maxCharacters = 150) {
+  const emptyContext = { before: "", after: "" };
+  const document = anchor && anchor.ownerDocument;
+  if (!document || typeof document.createRange !== "function") {
+    return emptyContext;
+  }
+
+  const orderedAnchors = anchors || Array.from(document.querySelectorAll("a[href]"));
+  const anchorIndex = orderedAnchors.indexOf(anchor);
+  const root = document.body || document.documentElement;
+  if (anchorIndex < 0 || !root) {
+    return emptyContext;
+  }
+
+  try {
+    const beforeRange = document.createRange();
+    if (anchorIndex > 0) {
+      beforeRange.setStartAfter(orderedAnchors[anchorIndex - 1]);
+    } else {
+      beforeRange.setStart(root, 0);
+    }
+    beforeRange.setEndBefore(anchor);
+
+    const afterRange = document.createRange();
+    afterRange.setStartAfter(anchor);
+    if (anchorIndex + 1 < orderedAnchors.length) {
+      afterRange.setEndBefore(orderedAnchors[anchorIndex + 1]);
+    } else {
+      afterRange.setEnd(root, root.childNodes.length);
+    }
+
+    const before = normalizeSearchText(beforeRange.toString());
+    const after = normalizeSearchText(afterRange.toString());
+    return {
+      before: before.slice(-maxCharacters),
+      after: after.slice(0, maxCharacters),
+    };
+  } catch (error) {
+    console.warn("Unable to collect text adjacent to a message link:", error);
+    return emptyContext;
+  }
+}
+
+function scoreUnsubscribeCandidate(signalText, href, adjacentText = { before: "", after: "" }) {
   const text = normalizeSearchText(signalText);
   const urlText = normalizeSearchText(safeDecodeURIComponent(String(href)));
   let score = 0;
@@ -228,8 +278,37 @@ function scoreUnsubscribeCandidate(signalText, href) {
     }
   }
 
+  score = Math.max(score, scoreAdjacentUnsubscribeText(adjacentText));
+
   if (score > 0 && /^https:/i.test(href)) score += 5;
   return score;
+}
+
+function scoreAdjacentUnsubscribeText(adjacentText) {
+  const before = normalizeSearchText(adjacentText && adjacentText.before);
+  const after = normalizeSearchText(adjacentText && adjacentText.after);
+  let closestDistance = Number.POSITIVE_INFINITY;
+
+  for (const term of UNSUBSCRIBE_TERMS) {
+    const normalizedTerm = normalizeSearchText(term);
+    if (!normalizedTerm) continue;
+
+    const beforeIndex = before.lastIndexOf(normalizedTerm);
+    if (beforeIndex >= 0) {
+      closestDistance = Math.min(
+        closestDistance,
+        before.length - beforeIndex - normalizedTerm.length
+      );
+    }
+
+    const afterIndex = after.indexOf(normalizedTerm);
+    if (afterIndex >= 0) {
+      closestDistance = Math.min(closestDistance, afterIndex);
+    }
+  }
+
+  if (!Number.isFinite(closestDistance)) return 0;
+  return closestDistance <= 40 ? 90 : 75;
 }
 
 function normalizeSearchText(value) {

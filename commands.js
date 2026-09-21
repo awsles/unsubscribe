@@ -504,7 +504,8 @@ function getMessageBodyHtml(item) {
 /**
  * Parse all http/https anchors in the message and score their likelihood of
  * being an unsubscribe control. The link text, accessibility labels, title,
- * descendant image alt text, and URL itself are all considered.
+ * descendant image alt text, URL, and bounded text immediately before and
+ * after the anchor are all considered.
  */
 function scoreBodyUnsubscribeLinks(html) {
   if (!html || typeof DOMParser === "undefined") {
@@ -522,7 +523,8 @@ function scoreBodyUnsubscribeLinks(html) {
     }
 
     const signalText = collectAnchorSignalText(anchor);
-    const score = scoreUnsubscribeCandidate(signalText, rawHref);
+    const adjacentText = collectAdjacentAnchorText(anchor, anchors);
+    const score = scoreUnsubscribeCandidate(signalText, rawHref, adjacentText);
     if (score <= 0) {
       continue;
     }
@@ -564,7 +566,57 @@ function collectAnchorSignalText(anchor) {
   return normalizeSearchText(parts.join(" "));
 }
 
-function scoreUnsubscribeCandidate(signalText, href) {
+/**
+ * Collect a small amount of document-order text around an anchor. Context is
+ * bounded and stops at the previous/next hyperlink so that an unsubscribe
+ * phrase is associated only with the nearest link. This supports markup such
+ * as "To unsubscribe, <a>click here</a>" without treating "click here" as a
+ * signal by itself.
+ */
+function collectAdjacentAnchorText(anchor, anchors, maxCharacters = 150) {
+  const emptyContext = { before: "", after: "" };
+  const document = anchor && anchor.ownerDocument;
+  if (!document || typeof document.createRange !== "function") {
+    return emptyContext;
+  }
+
+  const orderedAnchors = anchors || Array.from(document.querySelectorAll("a[href]"));
+  const anchorIndex = orderedAnchors.indexOf(anchor);
+  const root = document.body || document.documentElement;
+  if (anchorIndex < 0 || !root) {
+    return emptyContext;
+  }
+
+  try {
+    const beforeRange = document.createRange();
+    if (anchorIndex > 0) {
+      beforeRange.setStartAfter(orderedAnchors[anchorIndex - 1]);
+    } else {
+      beforeRange.setStart(root, 0);
+    }
+    beforeRange.setEndBefore(anchor);
+
+    const afterRange = document.createRange();
+    afterRange.setStartAfter(anchor);
+    if (anchorIndex + 1 < orderedAnchors.length) {
+      afterRange.setEndBefore(orderedAnchors[anchorIndex + 1]);
+    } else {
+      afterRange.setEnd(root, root.childNodes.length);
+    }
+
+    const before = normalizeSearchText(beforeRange.toString());
+    const after = normalizeSearchText(afterRange.toString());
+    return {
+      before: before.slice(-maxCharacters),
+      after: after.slice(0, maxCharacters),
+    };
+  } catch (error) {
+    console.warn("Unable to collect text adjacent to a message link:", error);
+    return emptyContext;
+  }
+}
+
+function scoreUnsubscribeCandidate(signalText, href, adjacentText = { before: "", after: "" }) {
   const text = normalizeSearchText(signalText);
   const urlText = normalizeSearchText(safeDecodeURIComponent(String(href)));
   let score = 0;
@@ -586,6 +638,8 @@ function scoreUnsubscribeCandidate(signalText, href) {
     }
   }
 
+  score = Math.max(score, scoreAdjacentUnsubscribeText(adjacentText));
+
   // Favor HTTPS when everything else is equal without allowing protocol alone
   // to turn an unrelated link into a candidate.
   if (score > 0 && /^https:\/\//i.test(href)) {
@@ -593,6 +647,33 @@ function scoreUnsubscribeCandidate(signalText, href) {
   }
 
   return score;
+}
+
+function scoreAdjacentUnsubscribeText(adjacentText) {
+  const before = normalizeSearchText(adjacentText && adjacentText.before);
+  const after = normalizeSearchText(adjacentText && adjacentText.after);
+  let closestDistance = Number.POSITIVE_INFINITY;
+
+  for (const term of UNSUBSCRIBE_TERMS) {
+    const normalizedTerm = normalizeSearchText(term);
+    if (!normalizedTerm) continue;
+
+    const beforeIndex = before.lastIndexOf(normalizedTerm);
+    if (beforeIndex >= 0) {
+      closestDistance = Math.min(
+        closestDistance,
+        before.length - beforeIndex - normalizedTerm.length
+      );
+    }
+
+    const afterIndex = after.indexOf(normalizedTerm);
+    if (afterIndex >= 0) {
+      closestDistance = Math.min(closestDistance, afterIndex);
+    }
+  }
+
+  if (!Number.isFinite(closestDistance)) return 0;
+  return closestDistance <= 40 ? 90 : 75;
 }
 
 function normalizeSearchText(value) {
