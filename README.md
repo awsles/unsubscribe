@@ -2,7 +2,10 @@
 
 **Outlook Unsubscribe** is a lightweight Outlook web add-in that adds an **Unsubscribe** command to received email messages. It reads the standard mailing-list unsubscribe headers in the current message and uses the best unsubscribe method advertised by the sender.
 
-The add-in is designed for Microsoft Outlook on Windows, including both **new Outlook** and **classic Outlook**, and can also run in Outlook on the web where the required Office.js APIs are supported.
+The add-in supports **new Outlook**, **classic Outlook**, Outlook on the web,
+and Outlook on **iOS and Android**. Desktop and web clients use a ribbon
+command; mobile clients use an Outlook mobile command that opens a compact task
+pane.
 
 ## How does it work?
 Email originating via a subscription often includes a hidden **List-Unsubscribe** header that contains a link for unsubscribing from the associated subscription.
@@ -19,13 +22,15 @@ IT is best to choose the most recent email from that sender to use the unsubscri
 Many provides claim it can take days for an unsubscribe to take effect. And sadly, there are a few that simply ignore the requests.
 
 
-Replace the repository-root `commands.js` and `commands.html` with the files in this package.
+Replace the repository-root files with the changed files in this package,
+including `commands.js`, `commands.html`, `mobile.js`, `mobile.html`, and
+`manifest.xml`.
 
 Then update the existing `manifest.xml` (do not replace it with an older copy):
 
-1. Set the manifest version to `<Version>1.0.0.9</Version>`.
+1. Set the manifest version to `<Version>1.0.0.10</Version>`.
 2. Recommended cache-buster: change the `Commands.Url` value to:
-   `https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.9`
+   `https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.10`
 3. Commit/push the changes and wait for GitHub Pages to publish them.
 4. Remove the previously sideloaded add-in and sideload the updated manifest.xml.
 
@@ -278,9 +283,10 @@ This is an **Outlook web add-in**, not a Windows COM/VSTO plug-in. Outlook insta
 The add-in:
 
 - Uses `getAllInternetHeadersAsync()` to read the Internet/MIME headers of the message currently being viewed.
-- Requires Outlook **Mailbox requirement set 1.8 or later**.
+- Uses a VersionOverrides 1.1 mobile command and a full-screen mobile task pane.
+- Uses Mailbox 1.8 header APIs on desktop and falls back to scanning the message body when those APIs aren't available.
 - Uses only the Outlook **ReadItem** permission.
-- Uses `displayNewMessageForm()` to create a `mailto:` unsubscribe draft.
+- Uses `displayNewMessageFormAsync()` where supported to create a `mailto:` unsubscribe draft.
 - Uses `Office.context.ui.openBrowserWindow()` where supported, with an Office dialog fallback for clients such as new Outlook on Windows.
 - Has no separate application server or database.
 - Does not upload or store your message contents in a project-controlled backend.
@@ -300,12 +306,18 @@ You need:
   - New Outlook for Windows
   - Classic Outlook for Windows
   - Outlook on the web
+  - Outlook on iOS
+  - Outlook on Android
 - A Microsoft mailbox supported by Outlook add-ins, such as:
   - Microsoft 365 / Exchange Online work or school account
   - Outlook.com / Hotmail account
 - Internet access, because Outlook web add-ins load their runtime files over HTTPS.
 
-> **Note:** Outlook can connect to accounts such as Gmail and Yahoo, but Outlook add-ins are not supported for those non-Microsoft accounts in Outlook on Windows or Outlook on the web.
+> **Mobile note:** Outlook mobile add-ins support Microsoft 365 and Outlook.com
+> accounts, not non-Microsoft accounts such as Gmail. The mobile task pane scans
+> links embedded in the message body. If a mobile client exposes the full-header
+> API, it also processes `List-Unsubscribe`; otherwise header-only unsubscribe
+> methods require a future Microsoft Graph-authenticated implementation.
 
 
 ## Source code
@@ -324,12 +336,14 @@ https://awsles.github.io/unsubscribe/
 - v1.0.0.7 -- Rolled back v1.0.0.6 changes
 - v1.0.0.8 -- Standardize mailto unsubscribe drafts and identify the original recipient in the body
 - v1.0.0.9 -- Wait for Outlook to open mailto drafts before completing the command
+- v1.0.0.10 -- Add Outlook mobile command surface and mobile unsubscribe task pane
 
 ### Known Issues
 
 1. Outlook does not load the icon for the add-in.  Unsure why.
 1. Users have to accept "Outlook Unsubscribe wants to display a new window." in some cases. If promptBeforeOpen:false is added to Office.context.ui.displayDialogAsync(), then the window open fails.  Not sure if there is another work-around.
 1. Extraction of embedded Unsubscribe links is based on keywords, so it can miss some.
+1. On mobile clients that don't expose `getAllInternetHeadersAsync()`, header-only `List-Unsubscribe` methods aren't available; the add-in scans the message body instead.
 
 ## Microsoft documentation
 
@@ -338,3 +352,4 @@ For additional details, see Microsoft's documentation:
 - Sideload Outlook add-ins: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/sideload-outlook-add-ins-for-testing
 - Outlook add-ins overview: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/read-scenario
 - Internet header APIs: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/internet-headers
+- Outlook mobile add-ins: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/outlook-mobile-addins

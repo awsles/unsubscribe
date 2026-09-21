@@ -85,13 +85,22 @@ async function unsubscribe(event) {
   try {
     stage = "getting current message";
     const item = Office.context.mailbox.item;
-    if (!item || typeof item.getAllInternetHeadersAsync !== "function") {
-      safeShowError("This Outlook client can't read message internet headers.");
+    if (!item) {
+      safeShowError("No Outlook message is currently selected.");
       return;
     }
 
     stage = "reading internet headers";
-    const headers = await getAllInternetHeaders(item);
+    let headers = "";
+    if (typeof item.getAllInternetHeadersAsync === "function") {
+      try {
+        headers = await getAllInternetHeaders(item);
+      } catch (headerError) {
+        // Continue with the message-body scanner on clients that expose the
+        // method but can't return headers for the current account or item.
+        console.warn("Unable to read internet headers; scanning the message body instead:", headerError);
+      }
+    }
 
     stage = "parsing List-Unsubscribe headers";
     const listUnsubscribe = getHeaderValue(headers, "List-Unsubscribe");

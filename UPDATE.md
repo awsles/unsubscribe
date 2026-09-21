@@ -1,11 +1,20 @@
-# Outlook Unsubscribe v1.0.0.9
+# Outlook Unsubscribe v1.0.0.10
 
 ## What changed
 
-This version fixes email-based (`mailto:`) unsubscribe drafts in Outlook on the
-web. The add-in now uses `displayNewMessageFormAsync()` when available and waits
-for Outlook to report success or failure before completing the ribbon command.
-Older clients retain the synchronous fallback.
+This version adds Outlook mobile support:
+
+- Adds a VersionOverrides 1.1 `<MobileFormFactor>` with a
+  `MobileMessageReadCommandSurface` button.
+- Adds `mobile.html` and `mobile.js`, which provide a full-screen mobile task
+  pane and user-initiated unsubscribe actions.
+- Scans message-body links using the same multilingual unsubscribe terms as the
+  desktop command, including HTTPS, HTTP, and `mailto:` links.
+- Preserves sender-provided `mailto:` subject/body values and supplies the same
+  defaults used by the desktop add-in when they are absent.
+- Tries the Internet-header API when a client exposes it, but continues with
+  body scanning when it isn't available.
+- Keeps the existing desktop command and Outlook-on-the-web compose fix.
 
 The v1.0.0.8 email draft behavior is retained:
 
@@ -45,19 +54,22 @@ Replace the repository-root files:
 
 - `commands.js`
 - `commands.html`
+- `mobile.js`
+- `mobile.html`
 - `README.md`
 - `UPDATE.md`
 
 Then update `manifest.xml`:
 
 ```xml
-<Version>1.0.0.9</Version>
+<Version>1.0.0.10</Version>
 ```
 
-For each manifest URL that loads `commands.html`, use a v1.0.0.9 cache buster, for example:
+For each manifest URL that loads JavaScript, use a v1.0.0.10 cache buster, for example:
 
 ```xml
-https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.9
+https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.10
+https://awsles.github.io/unsubscribe/mobile.html?v=1.0.0.10
 ```
 
 Commit/push the changes, wait for GitHub Pages to publish them, remove the currently sideloaded add-in, and sideload the updated manifest again.
