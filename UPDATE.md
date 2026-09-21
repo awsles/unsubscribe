@@ -4,6 +4,8 @@
 
 This version adds Outlook mobile support:
 
+- Sets both the VersionOverrides 1.0 and nested VersionOverrides 1.1 minimum
+  Mailbox requirement to 1.5, as required by Microsoft's manifest validator.
 - Adds a VersionOverrides 1.1 `<MobileFormFactor>` with a
   `MobileMessageReadCommandSurface` button.
 - Adds `mobile.html` and `mobile.js`, which provide a full-screen mobile task

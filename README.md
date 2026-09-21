@@ -243,7 +243,7 @@ The current priority order is:
 1. mailto: → compose unsubscribe email
 1. Otherwise → “No unsubscribe method was found”
 
-The body scanner examines anchor text, aria-label, title, image alt text, and URL strings, and incorporates multilingual unsubscribe terminology modeled on Microsoft's legacy add-in manifest. It uses body.getAsync(...Html...), which is supported in Read mode with Mailbox 1.3 and ReadItem permissions, so your existing Mailbox 1.8 manifest already covers it.
+The body scanner examines anchor text, aria-label, title, image alt text, and URL strings, and incorporates multilingual unsubscribe terminology modeled on Microsoft's legacy add-in manifest. It uses body.getAsync(...Html...), which is supported in Read mode with Mailbox 1.3 and ReadItem permissions, so the Mailbox 1.5 manifest requirement covers it.
 
 ### Example
 
@@ -284,7 +284,7 @@ The add-in:
 
 - Uses `getAllInternetHeadersAsync()` to read the Internet/MIME headers of the message currently being viewed.
 - Uses a VersionOverrides 1.1 mobile command and a full-screen mobile task pane.
-- Uses Mailbox 1.8 header APIs on desktop and falls back to scanning the message body when those APIs aren't available.
+- Uses Mailbox 1.8 header APIs when the client exposes them and falls back to scanning the message body when those APIs aren't available. The manifest's 1.0 and 1.1 overrides both declare Mailbox 1.5 so the nested mobile override satisfies Microsoft's validation constraint.
 - Uses only the Outlook **ReadItem** permission.
 - Uses `displayNewMessageFormAsync()` where supported to create a `mailto:` unsubscribe draft.
 - Uses `Office.context.ui.openBrowserWindow()` where supported, with an Office dialog fallback for clients such as new Outlook on Windows.
