@@ -152,7 +152,7 @@ async function unsubscribe(event) {
     if (mailto) {
       stage = "composing mailto unsubscribe message";
       safeClearStatus();
-      composeMailtoUnsubscribe(mailto);
+      composeMailtoUnsubscribe(mailto, headers, item);
       return;
     }
 
@@ -277,31 +277,69 @@ function openInOfficeDialog(targetUrl) {
 
 /**
  * Opens a new Outlook compose form for a mailto: List-Unsubscribe method.
- * The mailto URI controls the recipient, subject and body. We intentionally
- * don't invent subject/body text when the URI doesn't provide it because
- * automated list processors may rely on the exact values supplied by the
- * sender.
+ * The mailto URI controls the recipient and, when present, the subject.
+ * If subject= is absent, "UNSUBSCRIBE" is used. A sender-provided body is
+ * preserved; otherwise the body identifies the original recipient address.
+ *
+ * Outlook creates the draft in the mailbox context of the message being read.
+ * Office.js doesn't expose Outlook's COM SentOnBehalfOfName property or any
+ * other writable From field. If Outlook doesn't automatically select an alias,
+ * the user must select it in the draft before sending.
  */
-function composeMailtoUnsubscribe(mailtoUri) {
+function composeMailtoUnsubscribe(mailtoUri, rawHeaders, item) {
   const message = parseMailtoUri(mailtoUri);
 
   if (!message.toRecipients.length) {
     throw new Error("The mailto unsubscribe method does not contain a recipient.");
   }
 
+  const originalRecipient = getOriginalRecipientAddress(rawHeaders, item);
+  if (!originalRecipient) {
+    throw new Error("The address that received the original message could not be determined.");
+  }
+
   const form = {
     toRecipients: message.toRecipients,
+    subject: message.subject !== null ? message.subject : "UNSUBSCRIBE",
+    htmlBody: textToSafeHtml(
+      message.body !== null
+        ? message.body
+        : `Please UNSUBSCRIBE ${originalRecipient}`
+    ),
   };
 
-  if (message.subject !== null) {
-    form.subject = message.subject;
-  }
-
-  if (message.body !== null) {
-    form.htmlBody = textToSafeHtml(message.body);
-  }
-
   Office.context.mailbox.displayNewMessageForm(form);
+}
+
+/**
+ * Returns the original recipient address. The Internet To header is preferred
+ * because it preserves an alias that Outlook may resolve to a mailbox's primary
+ * address. Outlook's resolved To collection and user profile are fallbacks.
+ */
+function getOriginalRecipientAddress(rawHeaders, item) {
+  const headerAddress = extractFirstEmailAddress(getHeaderValue(rawHeaders, "To"));
+  if (headerAddress) return headerAddress;
+
+  if (item && Array.isArray(item.to)) {
+    for (const recipient of item.to) {
+      const address = recipient && (recipient.emailAddress || recipient.address);
+      if (address) return String(address).trim();
+    }
+  }
+
+  const profile = Office.context.mailbox.userProfile;
+  return profile && profile.emailAddress
+    ? String(profile.emailAddress).trim()
+    : null;
+}
+
+function extractFirstEmailAddress(value) {
+  if (!value) return null;
+
+  const match = String(value).match(
+    /(?:<\s*)?([A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?:\s*>)?/i
+  );
+  return match ? match[1] : null;
 }
 
 /**

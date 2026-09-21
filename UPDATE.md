@@ -1,10 +1,26 @@
-# Outlook Unsubscribe v1.0.0.5
+# Outlook Unsubscribe v1.0.0.8
 
 ## What changed
 
-This version adds an HTML-body fallback inspired by Microsoft's legacy Outlook Unsubscribe add-in.
+This version updates email-based (`mailto:`) unsubscribe drafts:
 
-Unsubscribe priority is now:
+- The recipient continues to come from the `mailto:` URI.
+- A sender-provided `subject=` value is preserved, including an explicitly
+  empty value.
+- If the URI doesn't contain `subject=`, the subject is `UNSUBSCRIBE`.
+- A sender-provided `body=` value is preserved, including an explicitly empty
+  value.
+- If the URI doesn't contain `body=`, the body is `Please UNSUBSCRIBE xxx`,
+  where `xxx` is the first email address in the original message's Internet
+  `To:` header. Outlook's resolved recipient and mailbox profile addresses are
+  used as fallbacks.
+
+Outlook creates the draft in the mailbox context of the message being read.
+This Office.js web add-in can't use Outlook COM's `SentOnBehalfOfName` property
+and Office.js doesn't expose another writable From field. If Outlook doesn't
+automatically choose an original alias, select it in the draft before sending.
+
+Unsubscribe priority remains:
 
 1. `List-Unsubscribe-Post: List-Unsubscribe=One-Click` + HTTPS URL -> RFC 8058 POST.
 2. HTTPS URL in `List-Unsubscribe` -> open the unsubscribe page.
@@ -24,17 +40,19 @@ Replace the repository-root files:
 
 - `commands.js`
 - `commands.html`
+- `README.md`
+- `UPDATE.md`
 
 Then update `manifest.xml`:
 
 ```xml
-<Version>1.0.0.5</Version>
+<Version>1.0.0.8</Version>
 ```
 
-For each manifest URL that loads `commands.html`, use a v1.0.0.5 cache buster, for example:
+For each manifest URL that loads `commands.html`, use a v1.0.0.8 cache buster, for example:
 
 ```xml
-https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.5
+https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.8
 ```
 
 Commit/push the changes, wait for GitHub Pages to publish them, remove the currently sideloaded add-in, and sideload the updated manifest again.

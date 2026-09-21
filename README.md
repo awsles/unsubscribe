@@ -23,11 +23,11 @@ Replace the repository-root `commands.js` and `commands.html` with the files in 
 
 Then update the existing `manifest.xml` (do not replace it with an older copy):
 
-1. Change `<Version>1.0.0.1</Version>` to `<Version>1.0.0.2</Version>`.
+1. Set the manifest version to `<Version>1.0.0.8</Version>`.
 2. Recommended cache-buster: change the `Commands.Url` value to:
-   `https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.2`
+   `https://awsles.github.io/unsubscribe/commands.html?v=1.0.0.8`
 3. Commit/push the changes and wait for GitHub Pages to publish them.
-4. Remove the sideloaded 1.0.0.1 add-in and sideload the updated manifest.xml.
+4. Remove the previously sideloaded add-in and sideload the updated manifest.xml.
 
 Behavior priority:
 1. `List-Unsubscribe-Post: List-Unsubscribe=One-Click` + HTTPS URI -> HTTPS POST.
@@ -35,7 +35,16 @@ Behavior priority:
 3. HTTP List-Unsubscribe URI -> open where supported.
 4. mailto List-Unsubscribe URI -> open a pre-addressed Outlook compose draft.
 
-The mailto draft preserves sender-provided recipient, subject, and body. It does not invent subject/body text when omitted.
+The mailto draft preserves the sender-provided recipient, subject, and body.
+If the `mailto:` URI doesn't contain `subject=`, the add-in uses `UNSUBSCRIBE`.
+If it doesn't contain `body=`, the add-in uses `Please UNSUBSCRIBE xxx`, where
+`xxx` is the address in the original message's Internet `To:` header.
+
+Outlook creates the draft from the mailbox that owns the message being read.
+The Office.js web add-in API doesn't expose Outlook COM's
+`SentOnBehalfOfName` property or another writable From field. If Outlook
+doesn't automatically select the original alias, select it in the draft's From
+field before sending.
 
 Note: RFC 8058 also specifies DKIM validation requirements. This client-only update implements the one-click POST mechanics but does not independently cryptographically validate DKIM signatures.
 
@@ -171,7 +180,7 @@ It chooses an unsubscribe method in this order:
    An HTTP link is used only when no HTTPS link is available and the Outlook client supports opening it.
 
 4. **Email-based (`mailto:`) unsubscribe**  
-   If there is no web-based method but the message provides a `mailto:` unsubscribe method, the add-in opens a new Outlook message populated with the recipient, subject, and body specified by the sender. The draft is **not sent automatically**; you review it and click **Send** yourself.
+   If there is no web-based method but the message provides a `mailto:` unsubscribe method, the add-in opens a new Outlook message addressed to the sender-provided recipient. Sender-provided `subject=` and `body=` values are preserved. When either parameter is absent, the subject defaults to `UNSUBSCRIBE` and the body defaults to `Please UNSUBSCRIBE xxx`, where `xxx` is the original recipient address. The draft is **not sent automatically**; you review it and click **Send** yourself.
 
 5. **No supported unsubscribe method**  
    If the message does not contain a usable unsubscribe header, Outlook displays a notification explaining that no unsubscribe method was found.
@@ -219,7 +228,7 @@ It chooses an unsubscribe method in this order:
  "No unsubscribe method found"
 
 
-The v1.0.0.5 priority order is:
+The current priority order is:
 
 1. List-Unsubscribe-Post + HTTPS → RFC 8058 POST
 1. HTTPS List-Unsubscribe → open URL
@@ -245,7 +254,7 @@ Because a web link is available, the add-in uses the HTTPS link rather than the 
 If the message contains only:
 
 ```text
-List-Unsubscribe: <mailto:list@example.com?subject=unsubscribe&body=Please%20remove%20me>
+List-Unsubscribe: <mailto:list@example.com?subject=unsubscribe&body=Sender%20text>
 ```
 
 Outlook opens a new draft similar to:
@@ -254,8 +263,13 @@ Outlook opens a new draft similar to:
 To: list@example.com
 Subject: unsubscribe
 
-Please remove me
+Sender text
 ```
+
+If the `mailto:` URI doesn't contain a `subject=` parameter, the subject is
+`UNSUBSCRIBE`. If it doesn't contain a `body=` parameter, the body is `Please
+UNSUBSCRIBE original-recipient@example.com`. Explicitly empty `subject=` and
+`body=` parameters remain empty.
 
 ### Technical Overview
 
@@ -308,6 +322,7 @@ https://awsles.github.io/unsubscribe/
 - v1.0.0.5 -- Add support for extracting Unsubscribe link from message body
 - v1.0.0.6 -- Add promptBeforeOpen:false in Office.context.ui.displayDialogAsync() to eliminate "Outlook Unsubscribe wants to display a new window."
 - v1.0.0.7 -- Rolled back v1.0.0.6 changes
+- v1.0.0.8 -- Standardize mailto unsubscribe drafts and identify the original recipient in the body
 
 ### Known Issues
 
@@ -322,4 +337,3 @@ For additional details, see Microsoft's documentation:
 - Sideload Outlook add-ins: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/sideload-outlook-add-ins-for-testing
 - Outlook add-ins overview: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/read-scenario
 - Internet header APIs: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/internet-headers
-
