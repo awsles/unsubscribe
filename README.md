@@ -1,7 +1,9 @@
 ![Outlook Unsubscribe](images/Promo_Banner.png)
 
+**CURRENT VERSION:** v1.0.0.11 
+
 # Outlook Unsubscribe
-Tired of junk email?  Me too! Even being conscious with where I share my email, I was still getting 40+ spams a day. And there was  no "easy" way to go through an unsubscribe. You had to open the latest message from each sender and then hunt for the tiny "unsubscribe" link within the message. But did you know that most bulk email contains a hidden one-click unsubscribe? One click to that and you are removed. No login. No questions to answer.
+*Tired of junk email?  Me too!* Even being conscious with where and when I share my email address, I was still getting 40+ spams a day. And there was  no "easy" way to go through an unsubscribe. You had to open the latest message from each sender and then hunt for the tiny "unsubscribe" link within the message. But did you know that most bulk email contains a hidden one-click unsubscribe? One click to that and you are removed. No login. No questions to answer.
 
 I decided to create a Outlook add-in button that would find this hidden link and call it. I enhanced this with a fallback to look for "unsubscribe" within the message body. **Outlook Unsubscribe** is a lightweight Outlook web add-in that adds an **Unsubscribe** command to received email messages. It reads the standard mailing-list unsubscribe headers in the current message and uses the best unsubscribe method advertised by the sender.
 
@@ -179,6 +181,7 @@ The add-in can be removed from the **[Settings → Integrated apps](https://admi
 
 ## Known Issues
 
+1. There are variations of unsubscribe options in email. This add-in uses a *best effort* approach to find these which doesn't always succeed. The add-in will be periodically updated to support new use cases (this will require you to install the latest version to get those cases).
 1. Outlook does not load the primary icon for the add-in.  Unsure why.
 1. Users have to accept "Outlook Unsubscribe wants to display a new window." in some cases. If promptBeforeOpen:false is added to Office.context.ui.displayDialogAsync(), then the window open fails.  Not sure if there is another work-around.
 1. Extraction of embedded Unsubscribe links is based on keywords, so it can miss some.
