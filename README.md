@@ -1,4 +1,4 @@
-![Outlook Unsubscribe](images/Promo_Banner.png)
+![Outlook Unsubscribe](images/Promo_Banner2.png)
 
 **CURRENT VERSION:** v1.0.0.11  (October 2026)
 
