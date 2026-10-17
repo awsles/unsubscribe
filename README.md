@@ -15,8 +15,9 @@ pane.
 ## Table of Contents
 * [FREQUENTLY ASKED QUESTIONS](#FREQUENTLY-ASKED-QUESTIONS)
 * [INSTALLATION - Single User](#INSTALLATION-Single-User)
-* [INSTALLATION - M365 Tenant-wide](#INSTALLATION-M365 Tenant)
+* [INSTALLATION - M365 Tenant-wide](#INSTALLATION-M365-Tenant)
 * [REVISION HISTORY](#REVISION-HISTORY)
+* [License](#License) (CC by 4.0)
 
 
 ## Cleaning up SPAM
@@ -197,3 +198,7 @@ The add-in can be removed from the **[Settings → Integrated apps](https://admi
 1. On mobile clients that don't expose `getAllInternetHeadersAsync()`, header-only `List-Unsubscribe` methods aren't available; the add-in scans the message body instead.
 
 
+## License
+All works herein are licensed under a [Creative Commons Attribution 4.0 International License (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/ "Creative Commons CC BY 4.0 Deed"). 
+
+You are free to share (copy and redistribute the material in any medium or format) and adapt (remix, transform, and build upon the material) for any purpose, including commercially. However, you must give appropriate credit, provide a link to the license, and indicate if changes were made.
