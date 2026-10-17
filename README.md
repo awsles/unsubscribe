@@ -3,9 +3,9 @@
 **CURRENT VERSION:** v1.0.0.11  (21 September 2026)
 
 # Outlook Unsubscribe
-*Tired of junk email?  Me too!* Even being conscious with where and when I share my email address, I was still getting 40+ a day. And there was no "easy" way to go through an unsubscribe. You had to open the latest message from each sender and then hunt for the tiny "unsubscribe" link within the message. *Did you know that most bulk email contains a hidden [RFC-8058](https://certified-senders.org/wp-content/uploads/2017/07/CSA_one-click_list-unsubscribe.pdf) one-click unsubscribe?* One click to that and you are removed!  No login. No questions to answer. If this hidden field is missing, the add-in attempts to find the unsubscribe link embedded in the email body.
+*Tired of junk email?  Me too!* Even being careful with where and when I share my email address, I was still getting 40+ a day. And there was no "easy" way to go through an unsubscribe. You had to open the latest message from each sender and then hunt for the tiny "unsubscribe" link within the message. *Did you know that most bulk email contains a hidden [RFC-8058](https://certified-senders.org/wp-content/uploads/2017/07/CSA_one-click_list-unsubscribe.pdf) one-click unsubscribe?* One click to that and your remove request is sent!  No login. No questions to answer. If this hidden field is missing, the add-in attempts to find the unsubscribe link embedded in the email body.
 
-I decided to create a Outlook add-in button that would find this hidden link and call it. I enhanced this with a fallback to look for "unsubscribe" within the message body. **Outlook Unsubscribe** is a lightweight Outlook web add-in that adds an **Unsubscribe** command to received email messages. It reads the standard mailing-list unsubscribe headers in the current message and uses the best unsubscribe method advertised by the sender.
+I decided to create an Outlook add-in button that would find this hidden link and call it. I enhanced this with a fallback to look for "unsubscribe" within the message body. **Outlook Unsubscribe** is a lightweight Outlook web add-in that adds an **Unsubscribe** command to received email messages. It reads the standard mailing-list unsubscribe headers in the current message and uses the best unsubscribe method advertised by the sender.
 
 The add-in supports **new Outlook**, **classic Outlook**, **Outlook on the web (OWA)**,
 and Outlook on **iOS and Android**. Desktop and web clients use a ribbon
@@ -20,7 +20,7 @@ pane. My plan is to eventually make this a free giveaway on Microsoft Marketplac
 * [License & Privacy Policy](#License) (CC by 4.0)
 * Source Code: [https://github.com/awsles/unsubscribe/](https://github.com/awsles/unsubscribe/)
 
-## Cleaning up SPAM
+## Cleaning up Unwanted Email
 Once you have installed the add-in and you can see it, the next step is to go through existing email. The best way I have found to do this is to SORT your email by SENDER. For each sender, select the most recent email and then click UNSUBSCRIBE. In my case, I then deleted that email from that sender and proceeded to the next. You may have different message types from the same sender, so sometimes a couple of targeted UNSUBSCRIBEs are needed. Be careful not to unsubscribe from important email (like notices from your bank). Generally, such important email does not have an unsubscribe option but sometimes it does. And if you're on a roll cleaning up, you may inadvertently unsubscribe from something you want to keep.
 
 Just click the **Unsubscribe** button when reading the email message:
@@ -29,7 +29,7 @@ Just click the **Unsubscribe** button when reading the email message:
 The one-click **Unsubscribe** is then confirmed:
 ![One-Click Submitted](screenshots/One-ClickSubmitted.png)
 
-In the event that there is no hidden RFC-8058 compliant header, the add-in will attempt to locate an unsubscribe link within the message body. This will open a browser page to the associate unsubscribe page.
+In the event that there is no hidden RFC-8058 compliant header, the add-in will attempt to locate an unsubscribe link within the message body. This will open a browser page to the associated unsubscribe page.
 
 ---
 
@@ -42,7 +42,7 @@ Download the current manifest from the project repository in GitHub:
 
 https://github.com/awsles/unsubscribe/blob/main/manifest.xml
 
-CLick the link to open the file and choose **Download raw file**, then save it somewhere convenient on your PC, such as your **Downloads** folder.
+Click the link to open the file and choose **Download raw file**, then save it somewhere convenient on your PC, such as your **Downloads** folder.
 
 You can also view the deployed copy here:
 https://awsles.github.io/unsubscribe/manifest.xml
@@ -104,7 +104,7 @@ Depending on the message, the add-in will either:
 
 ## Updating the add-in
 
-Most JavaScript/HTML changes are loaded from the hosted GitHub Pages site automatically. However, if `manifest.xml` itself changes, Outlook may continue using the copy that was previously sideloaded.
+Most JavaScript/HTML changes are loaded from the hosted GitHub Pages site automatically. However, if the `manifest.xml` itself changes, Outlook may continue using the older copy that was previously sideloaded.
 
 When the manifest version changes:
 
@@ -127,7 +127,7 @@ To uninstall the sideloaded add-in:
 ---
 
 # INSTALLATION for M365 Tenant
-You can deploy an Outlook add-in to all users in your Microsoft 365 tenant using the Microsoft 365 Admin Center. This is called Centralized Deployment and allows administrators to install and manage add-ins across the organization without manually installing them on each user's computer. YOu will need Exchange Administrator or Global Administrator privileges to do this.
+You can deploy an Outlook add-in to all users in your Microsoft 365 tenant using the Microsoft 365 Admin Center. This is called Centralized Deployment and allows administrators to install and manage add-ins across the organization without manually installing them on each user's computer. You will need Exchange Administrator or Global Administrator privileges to do this.
 
 ## Steps
 1. Sign in to the [Microsoft 365 Admin Center](https://admin.microsoft.com/).
@@ -160,7 +160,7 @@ The add-in can be removed from the **[Settings → Integrated apps](https://admi
 # FREQUENTLY ASKED QUESTIONS
 
 ## I don't see the Unsubscribe button?
-Once you installed the add-in, you should refresh your Outlook web.
+Once you've installed the add-in, you should refresh your Outlook web.
 The Outlook Unsubscribe only appears when you are reading an email.
 If you don't see the icon, then look for an icon that looks like a stove top with 4 burners (basically a square with 4 small circles within).
 Click that and you should then see Outlook Unsubscribe.
@@ -172,30 +172,28 @@ This is normal behavior in cases where Outlook needs to open a browser window to
 Email originating via a subscription often includes a hidden **List-Unsubscribe** header that contains a link for unsubscribing from the associated subscription. This may be in addition to a *Click _here_ to unsubscribe* which appears in the email body.
 
 This Outlook add-in provides an **Unsubscribe** button that appears when reading email in Outlook. When clicked, this button
-looks for the List-Unsubscribe header and, if present, will launch a mini-browswer to that web page. In some cases, the Unsubscribe
-does not display a page but simpy just accepts the unsubscribe action.
+looks for the List-Unsubscribe header and, if present, will launch a mini-browser to that web page. In some cases, the Unsubscribe
+does not display a page but simply just accepts the unsubscribe action.
 
 You should only have to do this for each unique sender & subscription that you want to unsubscribe from.
 IT is best to choose the most recent email from that sender to use the unsubscribe button in.
 
-For more detail,see [*How it Works*](https://github.com/awsles/unsubscribe/blob/main/How%20it%20Works.md].
+For more detail,see [*How it Works*](https://github.com/awsles/unsubscribe/blob/main/How%20it%20Works.md).
 
 ## How long does it take to be unsubscribed?
-Often, the unsubscribe take effect immediately. In other cases, it can take days for the venodr to honor the request.
+Often, the unsubscribe takes effect immediately. In other cases, it can take days for the sender to honor the request.
 
 ## Does it work with GMAIL?
 This UNSUBSCRIBE plug-in only works with Microsoft 365 personal and work accounts. It does not work with GMAIL. 
 
 ## It did not find the Unsubscribe in the email but I can see it?
-If there is no one-click unsubscribe option in the email headers, then the add-in attempts to find an unsubscribe option within the body of the message. Often, this is obvious. Sometimes however, it is not. For example, if the text is "Remove me" instead of "unsubscribe". I will periodically update the plug-in to reflect different use cases (you will need to manually update the plug-in to get the latest version). 
+If there is no one-click unsubscribe option in the email headers, then the add-in attempts to find an unsubscribe option within the body of the message. Often, this is obvious. Sometimes however, it is not. For example, if the text is "Remove me" instead of "unsubscribe". I will periodically update the plug-in to reflect different use cases (you may need to manually update the plug-in to get the latest version if the manifest.xml changes). 
 
 
 ---
 
 # LICENSE
-All works herein are licensed under a [Creative Commons Attribution 4.0 International License (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/ "Creative Commons CC BY 4.0 Deed"). 
-
-You are free to share (copy and redistribute the material in any medium or format) and adapt (remix, transform, and build upon the material) for any purpose, including commercially. However, you must give appropriate credit, provide a link to the license, and indicate if changes were made.
+Outlook Unsubscribe is free and open-source software distributed under the MIT License. You may use, modify, and redistribute the source code for any purpose, including commercial use, provided that the original copyright and license notices are retained. See [LICENSE.md](LICENSE.md) for the full license.
 
 
 ## DISCLAIMER OF WARRANTY AND LIMITATION OF LIABILITY
@@ -211,7 +209,7 @@ This Outlook Unsubscribe Add-in is open-source software provided without warrant
 **BY INSTALLING OR USING THIS SOFTWARE, YOU ACKNOWLEDGE THAT YOU DO SO ENTIRELY AT YOUR OWN RISK AND ASSUME FULL RESPONSIBILITY FOR ANY CONSEQUENCES.**
 
 ## PRIVACY POLICY
-This add-in does not intentionally collect or transmit any personal data. All processing occurs client side.
+This add-in does not intentionally collect or transmit any personal data beyond what the email sender has included in their unsubscribe link(s). This data may include your email address and/or other identifiers required by the sender to unsubscribe you. All Javascript processing occurs client side. 
 
 Questions: Please refer any questions to the Unsubscribe project on GitHub.
 
@@ -236,7 +234,7 @@ Questions: Please refer any questions to the Unsubscribe project on GitHub.
 1. On mobile clients that don't expose `getAllInternetHeadersAsync()`, header-only `List-Unsubscribe` methods aren't available; the add-in scans the message body instead.
 
 ## Feedback
-Feedback is welcomed! Raise an issue and/or contribute to the code base. In particular, I am looking for use cases where the unsubscribe link embedded in the message body was not discovered (please include the relevant text surrounding the link - preferrably in HTML form when raising an issue).
+Feedback is welcomed! Raise an issue and/or contribute to the code base. In particular, I am looking for use cases where the unsubscribe link embedded in the message body was not discovered (please include the relevant text surrounding the link - preferably in HTML form when raising an issue).
 
 The published version of this README is [here](https://awsles.github.io/unsubscribe/).
 See [this article](https://certified-senders.org/wp-content/uploads/2017/07/CSA_one-click_list-unsubscribe.pdf) about RFC-8058 List-Unsubscribe header.
