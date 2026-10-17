@@ -17,7 +17,7 @@ pane. My plan is to eventually make this a free giveaway on Microsoft Marketplac
 * [INSTALLATION - Single User](#INSTALLATION-for-Single-User)
 * [INSTALLATION - M365 Tenant-wide](#INSTALLATION-for-M365-Tenant)
 * [REVISION HISTORY](#REVISION-HISTORY)
-* [License & Privacy Policy](#License) (CC by 4.0)
+* [License & Privacy Policy](#License) (MIT)
 * Source Code: [https://github.com/awsles/unsubscribe/](https://github.com/awsles/unsubscribe/)
 
 ## Cleaning up Unwanted Email
