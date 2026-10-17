@@ -161,11 +161,12 @@ NOTE: Deployment may take 24–72 hours to appear for all users. Restarting Outl
 Reference: [Microsoft's official add-in deployment instructions](https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-deployment-of-add-ins?view=o365-worldwide).
 
 ## uninstall
+The add-in can be removed from the **[Settings → Integrated apps](https://admin.cloud.microsoft/#/Settings/IntegratedApps)** screen.
 
 
 ---
 
-### Update History
+# REVISION HISTORY
 
 - v1.0.0.4 -- *Initial Version*
 - v1.0.0.5 -- Add support for extracting Unsubscribe link from message body
@@ -176,7 +177,7 @@ Reference: [Microsoft's official add-in deployment instructions](https://learn.m
 - v1.0.0.10 -- Add Outlook mobile command surface and mobile unsubscribe task pane
 - v1.0.0.11 -- Detect unsubscribe wording immediately before or after a hyperlink
 
-### Known Issues
+## Known Issues
 
 1. Outlook does not load the primary icon for the add-in.  Unsure why.
 1. Users have to accept "Outlook Unsubscribe wants to display a new window." in some cases. If promptBeforeOpen:false is added to Office.context.ui.displayDialogAsync(), then the window open fails.  Not sure if there is another work-around.
