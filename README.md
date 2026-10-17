@@ -17,7 +17,7 @@ pane. My plan is to eventually make this a free giveaway on Microsoft Marketplac
 * [INSTALLATION - Single User](#INSTALLATION-for-Single-User)
 * [INSTALLATION - M365 Tenant-wide](#INSTALLATION-for-M365-Tenant)
 * [REVISION HISTORY](#REVISION-HISTORY)
-* [License](#License) (CC by 4.0)
+* [License & Privacy Policy](#License) (CC by 4.0)
 * Source Code: [https://github.com/awsles/unsubscribe/](https://github.com/awsles/unsubscribe/)
 
 ## Cleaning up SPAM
@@ -209,6 +209,11 @@ This Outlook Unsubscribe Add-in is open-source software provided without warrant
 **TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW**, the authors, contributors, and copyright holders shall not be liable for any claims, damages, losses, or liabilities of any kind, whether direct, indirect, incidental, consequential, or otherwise, arising from the installation, use, misuse, or inability to use this software, even if advised of the possibility of such damages.
 
 **BY INSTALLING OR USING THIS SOFTWARE, YOU ACKNOWLEDGE THAT YOU DO SO ENTIRELY AT YOUR OWN RISK AND ASSUME FULL RESPONSIBILITY FOR ANY CONSEQUENCES.**
+
+## PRIVACY POLICY
+This add-in does not intentionally collect or transmit any personal data. All processing occurs client side.
+
+Questions: Please refer any questions to the Unsubscribe project on GitHub.
 
 
 # REVISION HISTORY
