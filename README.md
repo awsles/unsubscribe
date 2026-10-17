@@ -23,6 +23,8 @@ pane.
 ## Cleaning up SPAM
 Once you have installed the add-in and you can see it, the next step is to go through existing email. The best way I have found to do this is to SORT your email by SENDER. For each sender, select the most recent email and then click UNSUBSCRIBE. In my case, I then deleted that email from that sender and proceeded to the next. You may have different message types from the same sender, so sometimes a couple of targeted UNSUBSCRIBEs are needed. Be careful not to unsubscribe from important email (like notices from your bank). Generally, such important email does not have an unsubscribe option but sometimes it does. And if you're on a roll cleaning up, you may inadvertently unsubscribe from something you want to keep.
 
+## Disclaimer
+
 
 ---
 
@@ -200,7 +202,20 @@ If there is no one-click unsubscribe option in the email headers, then the add-i
 1. On mobile clients that don't expose `getAllInternetHeadersAsync()`, header-only `List-Unsubscribe` methods aren't available; the add-in scans the message body instead.
 
 
-## License
+# License
 All works herein are licensed under a [Creative Commons Attribution 4.0 International License (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/ "Creative Commons CC BY 4.0 Deed"). 
 
 You are free to share (copy and redistribute the material in any medium or format) and adapt (remix, transform, and build upon the material) for any purpose, including commercially. However, you must give appropriate credit, provide a link to the license, and indicate if changes were made.
+
+
+## DISCLAIMER OF WARRANTY AND LIMITATION OF LIABILITY
+
+**THIS SOFTWARE IS PROVIDED FREE OF CHARGE, "AS IS" AND "AS AVAILABLE," ENTIRELY AT YOUR OWN RISK.**
+
+This Outlook Unsubscribe Add-in is open-source software provided without warranties of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, security, reliability, or non-infringement.
+
+**No technical support, maintenance, updates, or continued availability are guaranteed.** The software may contain errors, malfunction, or produce unintended results. In particular, successful unsubscription is not guaranteed, and use of the software may result in unintended email transmissions, disclosure of information to third parties, or other adverse consequences.
+
+**TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW**, the authors, contributors, and copyright holders shall not be liable for any claims, damages, losses, or liabilities of any kind, whether direct, indirect, incidental, consequential, or otherwise, arising from the installation, use, misuse, or inability to use this software, even if advised of the possibility of such damages.
+
+**BY INSTALLING OR USING THIS SOFTWARE, YOU ACKNOWLEDGE THAT YOU DO SO ENTIRELY AT YOUR OWN RISK AND ASSUME FULL RESPONSIBILITY FOR ANY CONSEQUENCES.**
