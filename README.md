@@ -159,6 +159,9 @@ The Outlook Unsubscribe only appears when you are reading an email.
 If you don't see the icon, then look for an icon that looks like a stove top with 4 burners (basically a square with 4 small circles within).
 Click that and you should then see Outlook Unsubscribe.
 
+## Outlook is prompting "Outlook Unsubscribe wants to display a new window"?
+This is normal behavior in cases where Outlook needs to open a browser window to take you to the respective unsubscribe page. Unfortunately, there is no way to bypass this prompt - though I have found that Outlook stops asking after a while (giving me the impression that because I approved enough times, it is okay).
+
 ## How does it work?
 Email originating via a subscription often includes a hidden **List-Unsubscribe** header that contains a link for unsubscribing from the associated subscription. This may be in addition to a *Click _here_ to unsubscribe* which appears in the email body.
 
@@ -213,10 +216,10 @@ This Outlook Unsubscribe Add-in is open-source software provided without warrant
 - v1.0.0.10 -- Add Outlook mobile command surface and mobile unsubscribe task pane
 - v1.0.0.11 -- Detect unsubscribe wording immediately before or after a hyperlink
 
-## Known Issues
+## Known Limitations & Issues
 
-1. There are variations of unsubscribe options in email. This add-in uses a *best effort* approach to find these which doesn't always succeed. The add-in will be periodically updated to support new use cases (this will require you to install the latest version to get those cases).
-1. Outlook does not load the primary icon for the add-in.  Unsure why.
+1. There are variations of "unsubscribe" options appearing in emails. This add-in uses a *best effort* approach to find these which doesn't always succeed. The add-in will be periodically updated to support new use cases (this will require you to install the latest version to get those cases).
+1. Outlook does not load the primary icon for the add-in in some places.  Unsure why.
 1. Users have to accept "Outlook Unsubscribe wants to display a new window." in some cases. If promptBeforeOpen:false is added to Office.context.ui.displayDialogAsync(), then the window open fails.  Not sure if there is another work-around.
 1. Extraction of embedded Unsubscribe links is based on keywords, so it can miss some.
 1. On mobile clients that don't expose `getAllInternetHeadersAsync()`, header-only `List-Unsubscribe` methods aren't available; the add-in scans the message body instead.
