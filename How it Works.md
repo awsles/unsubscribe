@@ -181,3 +181,4 @@ For additional details, see Microsoft's documentation:
 - Outlook add-ins overview: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/read-scenario
 - Internet header APIs: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/internet-headers
 - Outlook mobile add-ins: https://learn.microsoft.com/en-us/office/dev/add-ins/outlook/outlook-mobile-addins
+- RFC-8058 List-Unsubscribe Header description: https://certified-senders.org/wp-content/uploads/2017/07/CSA_one-click_list-unsubscribe.pdf
