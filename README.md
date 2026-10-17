@@ -183,6 +183,25 @@ If there is no one-click unsubscribe option in the email headers, then the add-i
 
 ---
 
+# LICENSE
+All works herein are licensed under a [Creative Commons Attribution 4.0 International License (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/ "Creative Commons CC BY 4.0 Deed"). 
+
+You are free to share (copy and redistribute the material in any medium or format) and adapt (remix, transform, and build upon the material) for any purpose, including commercially. However, you must give appropriate credit, provide a link to the license, and indicate if changes were made.
+
+
+## DISCLAIMER OF WARRANTY AND LIMITATION OF LIABILITY
+
+**THIS SOFTWARE IS PROVIDED FREE OF CHARGE, "AS IS" AND "AS AVAILABLE," ENTIRELY AT YOUR OWN RISK.**
+
+This Outlook Unsubscribe Add-in is open-source software provided without warranties of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, security, reliability, or non-infringement.
+
+**No technical support, maintenance, updates, or continued availability are guaranteed.** The software may contain errors, malfunction, or produce unintended results. In particular, successful unsubscription is not guaranteed, and use of the software may result in unintended email transmissions, disclosure of information to third parties, or other adverse consequences.
+
+**TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW**, the authors, contributors, and copyright holders shall not be liable for any claims, damages, losses, or liabilities of any kind, whether direct, indirect, incidental, consequential, or otherwise, arising from the installation, use, misuse, or inability to use this software, even if advised of the possibility of such damages.
+
+**BY INSTALLING OR USING THIS SOFTWARE, YOU ACKNOWLEDGE THAT YOU DO SO ENTIRELY AT YOUR OWN RISK AND ASSUME FULL RESPONSIBILITY FOR ANY CONSEQUENCES.**
+
+
 # REVISION HISTORY
 
 - v1.0.0.4 -- *Initial Version*
@@ -205,21 +224,4 @@ If there is no one-click unsubscribe option in the email headers, then the add-i
 ## Feedback
 Feedback is welcomed! Raise an issue and/or contribute to the code base. In particular, I am looking for use cases where the unsubscribe link embedded in the message body was not discovered (please include the relevant text surrounding the link - preferrably in HTML form when raising an issue).
 
-
-# License
-All works herein are licensed under a [Creative Commons Attribution 4.0 International License (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/ "Creative Commons CC BY 4.0 Deed"). 
-
-You are free to share (copy and redistribute the material in any medium or format) and adapt (remix, transform, and build upon the material) for any purpose, including commercially. However, you must give appropriate credit, provide a link to the license, and indicate if changes were made.
-
-
-## DISCLAIMER OF WARRANTY AND LIMITATION OF LIABILITY
-
-**THIS SOFTWARE IS PROVIDED FREE OF CHARGE, "AS IS" AND "AS AVAILABLE," ENTIRELY AT YOUR OWN RISK.**
-
-This Outlook Unsubscribe Add-in is open-source software provided without warranties of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, security, reliability, or non-infringement.
-
-**No technical support, maintenance, updates, or continued availability are guaranteed.** The software may contain errors, malfunction, or produce unintended results. In particular, successful unsubscription is not guaranteed, and use of the software may result in unintended email transmissions, disclosure of information to third parties, or other adverse consequences.
-
-**TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW**, the authors, contributors, and copyright holders shall not be liable for any claims, damages, losses, or liabilities of any kind, whether direct, indirect, incidental, consequential, or otherwise, arising from the installation, use, misuse, or inability to use this software, even if advised of the possibility of such damages.
-
-**BY INSTALLING OR USING THIS SOFTWARE, YOU ACKNOWLEDGE THAT YOU DO SO ENTIRELY AT YOUR OWN RISK AND ASSUME FULL RESPONSIBILITY FOR ANY CONSEQUENCES.**
+The published version of this README is [here](https://awsles.github.io/unsubscribe/).
