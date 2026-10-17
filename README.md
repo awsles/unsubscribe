@@ -3,7 +3,7 @@
 **CURRENT VERSION:** v1.0.0.11  (21 September 2026)
 
 # Outlook Unsubscribe
-*Tired of junk email?  Me too!* Even being conscious with where and when I share my email address, I was still getting 40+ spams a day. And there was  no "easy" way to go through an unsubscribe. You had to open the latest message from each sender and then hunt for the tiny "unsubscribe" link within the message. But did you know that most bulk email contains a hidden one-click unsubscribe? One click to that and you are removed. No login. No questions to answer.
+*Tired of junk email?  Me too!* Even being conscious with where and when I share my email address, I was still getting 40+ a day. And there was no "easy" way to go through an unsubscribe. You had to open the latest message from each sender and then hunt for the tiny "unsubscribe" link within the message. *Did you know that most bulk email contains a hidden one-click unsubscribe?* One click to that and you are removed!  No login. No questions to answer. If this hidden field is missing, the add-in attempts to find the unsubscribe link embedded in the email body.
 
 I decided to create a Outlook add-in button that would find this hidden link and call it. I enhanced this with a fallback to look for "unsubscribe" within the message body. **Outlook Unsubscribe** is a lightweight Outlook web add-in that adds an **Unsubscribe** command to received email messages. It reads the standard mailing-list unsubscribe headers in the current message and uses the best unsubscribe method advertised by the sender.
 
