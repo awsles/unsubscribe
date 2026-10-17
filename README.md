@@ -14,8 +14,8 @@ pane.
 
 ## Table of Contents
 * [FREQUENTLY ASKED QUESTIONS](#FREQUENTLY-ASKED-QUESTIONS)
-* [INSTALLATION - Single User](#INSTALLATION---Single User)
-* [INSTALLATION - M365 Tenant-wide](#INSTALLATION---M365 Tenant-wide)
+* [INSTALLATION - Single User](#INSTALLATION-Single-User)
+* [INSTALLATION - M365 Tenant-wide](#INSTALLATION-M365 Tenant)
 * [REVISION HISTORY](#REVISION-HISTORY)
 
 
@@ -49,7 +49,7 @@ If there is no one-click unsubscribe option in the email headers, then the add-i
 
 ---
 
-# INSTALLATION - Single User
+# INSTALLATION Single User
 The add-in is currently installed by *sideloading* a Manifest file (`manifest.xml`) file into Outlook.
 This is done by using the WEB version of Outlook (often called OWA for Outlook Web Access). It can take a few hours for the plug-in to propagate to your desktop and mobile Outlook (though often it is a couple of minutes if you fully close and re-open Outlook).
 
@@ -148,7 +148,7 @@ To uninstall the sideloaded add-in:
 
 ---
 
-# INSTALLATION - M365 Tenant-wide
+# INSTALLATION M365 Tenant
 You can deploy an Outlook add-in to all users in your Microsoft 365 tenant using the Microsoft 365 Admin Center. This is called Centralized Deployment and allows administrators to install and manage add-ins across the organization without manually installing them on each user's computer. YOu will need Exchange Administrator or Global Administrator privileges to do this.
 
 ## Steps
