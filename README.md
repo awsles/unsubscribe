@@ -24,30 +24,6 @@ pane.
 Once you have installed the add-in and you can see it, the next step is to go through existing email. The best way I have found to do this is to SORT your email by SENDER. For each sender, select the most recent email and then click UNSUBSCRIBE. In my case, I then deleted that email from that sender and proceeded to the next. You may have different message types from the same sender, so sometimes a couple of targeted UNSUBSCRIBEs are needed. Be careful not to unsubscribe from important email (like notices from your bank). Generally, such important email does not have an unsubscribe option but sometimes it does. And if you're on a roll cleaning up, you may inadvertently unsubscribe from something you want to keep.
 
 
-# FREQUENTLY ASKED QUESTIONS
-
-## How does it work?
-Email originating via a subscription often includes a hidden **List-Unsubscribe** header that contains a link for unsubscribing from the associated subscription. This may be in addition to a *Click _here_ to unsubscribe* which appears in the email body.
-
-This Outlook add-in provides an **Unsubscribe** button that appears when reading email in Outlook. When clicked, this button
-looks for the List-Unsubscribe header and, if present, will launch a mini-browswer to that web page. In some cases, the Unsubscribe
-does not display a page but simpy just accepts the unsubscribe action.
-
-You should only have to do this for each unique sender & subscription that you want to unsubscribe from.
-IT is best to choose the most recent email from that sender to use the unsubscribe button in.
-
-For more detail,see [*How it Works*](https://github.com/awsles/unsubscribe/blob/main/How%20it%20Works.md].
-
-## How long does it take to be unsubscribed?
-Often, the unsubscribe take effect immediately. In other cases, it can take days for the venodr to honor the request.
-
-## Does it work with GMAIL?
-This UNSUBSCRIBE plug-in only works with Microsoft 365 personal and work accounts. It does not work with GMAIL. 
-
-## It did not find the Unsubscribe in the email but I can see it?
-If there is no one-click unsubscribe option in the email headers, then the add-in attempts to find an unsubscribe option within the body of the message. Often, this is obvious. Sometimes however, it is not. For example, if the text is "Remove me" instead of "unsubscribe". I will periodically update the plug-in to reflect different use cases (you will need to manually update the plug-in to get the latest version). 
-
-
 ---
 
 # INSTALLATION Single User
@@ -119,12 +95,6 @@ Depending on the message, the add-in will either:
 - Open a pre-addressed unsubscribe email draft, OR
 - Display a message saying that no supported unsubscribe method was found.
 
-## I don't see the Unsubscribe button
-Once you installed the add-in, you should refresh your Outlook web.
-The Outlook Unsubscribe only appears when you are reading an email.
-If you don't see the icon, then look for an icon that looks like a stove top with 4 burners (basically a square with 4 small circles within).
-Click that and you should then see Outlook Unsubscribe.
-
 ## Updating the add-in
 
 Most JavaScript/HTML changes are loaded from the hosted GitHub Pages site automatically. However, if `manifest.xml` itself changes, Outlook may continue using the copy that was previously sideloaded.
@@ -174,6 +144,38 @@ Reference: [Microsoft's official add-in deployment instructions](https://learn.m
 
 ## uninstall
 The add-in can be removed from the **[Settings → Integrated apps](https://admin.cloud.microsoft/#/Settings/IntegratedApps)** screen.
+
+
+---
+
+# FREQUENTLY ASKED QUESTIONS
+
+## I don't see the Unsubscribe button?
+Once you installed the add-in, you should refresh your Outlook web.
+The Outlook Unsubscribe only appears when you are reading an email.
+If you don't see the icon, then look for an icon that looks like a stove top with 4 burners (basically a square with 4 small circles within).
+Click that and you should then see Outlook Unsubscribe.
+
+## How does it work?
+Email originating via a subscription often includes a hidden **List-Unsubscribe** header that contains a link for unsubscribing from the associated subscription. This may be in addition to a *Click _here_ to unsubscribe* which appears in the email body.
+
+This Outlook add-in provides an **Unsubscribe** button that appears when reading email in Outlook. When clicked, this button
+looks for the List-Unsubscribe header and, if present, will launch a mini-browswer to that web page. In some cases, the Unsubscribe
+does not display a page but simpy just accepts the unsubscribe action.
+
+You should only have to do this for each unique sender & subscription that you want to unsubscribe from.
+IT is best to choose the most recent email from that sender to use the unsubscribe button in.
+
+For more detail,see [*How it Works*](https://github.com/awsles/unsubscribe/blob/main/How%20it%20Works.md].
+
+## How long does it take to be unsubscribed?
+Often, the unsubscribe take effect immediately. In other cases, it can take days for the venodr to honor the request.
+
+## Does it work with GMAIL?
+This UNSUBSCRIBE plug-in only works with Microsoft 365 personal and work accounts. It does not work with GMAIL. 
+
+## It did not find the Unsubscribe in the email but I can see it?
+If there is no one-click unsubscribe option in the email headers, then the add-in attempts to find an unsubscribe option within the body of the message. Often, this is obvious. Sometimes however, it is not. For example, if the text is "Remove me" instead of "unsubscribe". I will periodically update the plug-in to reflect different use cases (you will need to manually update the plug-in to get the latest version). 
 
 
 ---
