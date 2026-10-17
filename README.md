@@ -23,6 +23,10 @@ pane. My plan is to eventually make this a free giveaway on Microsoft Marketplac
 ## Cleaning up SPAM
 Once you have installed the add-in and you can see it, the next step is to go through existing email. The best way I have found to do this is to SORT your email by SENDER. For each sender, select the most recent email and then click UNSUBSCRIBE. In my case, I then deleted that email from that sender and proceeded to the next. You may have different message types from the same sender, so sometimes a couple of targeted UNSUBSCRIBEs are needed. Be careful not to unsubscribe from important email (like notices from your bank). Generally, such important email does not have an unsubscribe option but sometimes it does. And if you're on a roll cleaning up, you may inadvertently unsubscribe from something you want to keep.
 
+Just click:
+![One-Click Unsubscribe](screenshots/UnsubscribeButton2.png)
+
+The one-click unsubscribe is then confirmed:
 ![One-Click Submitted](screenshots/One-ClickSubmitted.png)
 
 ---
