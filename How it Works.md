@@ -173,24 +173,6 @@ https://github.com/awsles/unsubscribe/
 Hosted add-in files:
 https://awsles.github.io/unsubscribe/
 
-### Update History
-
-- v1.0.0.4 -- *Initial Version*
-- v1.0.0.5 -- Add support for extracting Unsubscribe link from message body
-- v1.0.0.6 -- Add promptBeforeOpen:false in Office.context.ui.displayDialogAsync() to eliminate "Outlook Unsubscribe wants to display a new window."
-- v1.0.0.7 -- Rolled back v1.0.0.6 changes
-- v1.0.0.8 -- Standardize mailto unsubscribe drafts and identify the original recipient in the body
-- v1.0.0.9 -- Wait for Outlook to open mailto drafts before completing the command
-- v1.0.0.10 -- Add Outlook mobile command surface and mobile unsubscribe task pane
-- v1.0.0.11 -- Detect unsubscribe wording immediately before or after a hyperlink
-
-### Known Issues
-
-1. Outlook does not load the primary icon for the add-in.  Unsure why.
-1. Users have to accept "Outlook Unsubscribe wants to display a new window." in some cases. If promptBeforeOpen:false is added to Office.context.ui.displayDialogAsync(), then the window open fails.  Not sure if there is another work-around.
-1. Extraction of embedded Unsubscribe links is based on keywords, so it can miss some.
-1. On mobile clients that don't expose `getAllInternetHeadersAsync()`, header-only `List-Unsubscribe` methods aren't available; the add-in scans the message body instead.
-
 ## Microsoft documentation
 
 For additional details, see Microsoft's documentation:
