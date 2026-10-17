@@ -201,6 +201,9 @@ If there is no one-click unsubscribe option in the email headers, then the add-i
 1. Extraction of embedded Unsubscribe links is based on keywords, so it can miss some.
 1. On mobile clients that don't expose `getAllInternetHeadersAsync()`, header-only `List-Unsubscribe` methods aren't available; the add-in scans the message body instead.
 
+## Feedback
+Feedback is welcomed! Raise an issue and/or contribute to the code base. In particular, I am looking for use cases where the unsubscribe link embedded in the message body was not discovered (please include the relevant text surrounding the link - preferrably in HTML form when raising an issue).
+
 
 # License
 All works herein are licensed under a [Creative Commons Attribution 4.0 International License (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/ "Creative Commons CC BY 4.0 Deed"). 
