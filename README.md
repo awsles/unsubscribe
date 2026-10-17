@@ -10,7 +10,7 @@ I decided to create a Outlook add-in button that would find this hidden link and
 The add-in supports **new Outlook**, **classic Outlook**, **Outlook on the web (OWA)**,
 and Outlook on **iOS and Android**. Desktop and web clients use a ribbon
 command; mobile clients use an Outlook mobile command that opens a compact task
-pane.
+pane. My plan is to eventually make this a free giveaway on Microsoft Marketplace.
 
 ## Table of Contents
 * [FREQUENTLY ASKED QUESTIONS](#FREQUENTLY-ASKED-QUESTIONS)
