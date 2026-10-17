@@ -178,7 +178,7 @@ does not display a page but simply just accepts the unsubscribe action.
 You should only have to do this for each unique sender & subscription that you want to unsubscribe from.
 IT is best to choose the most recent email from that sender to use the unsubscribe button in.
 
-For more detail,see [*How it Works*](https://github.com/awsles/unsubscribe/blob/main/How%20it%20Works.md).
+For more detail, see [*How it Works*](How%20it%20Works.md).
 
 ## How long does it take to be unsubscribed?
 Often, the unsubscribe takes effect immediately. In other cases, it can take days for the sender to honor the request.
