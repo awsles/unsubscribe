@@ -1,6 +1,6 @@
 ![Outlook Unsubscribe](images/Promo_Banner2.png)
 
-**CURRENT VERSION:** v1.0.0.11  (October 2026)
+**CURRENT VERSION:** v1.0.0.11  (21 September 2026)
 
 # Outlook Unsubscribe
 *Tired of junk email?  Me too!* Even being conscious with where and when I share my email address, I was still getting 40+ spams a day. And there was  no "easy" way to go through an unsubscribe. You had to open the latest message from each sender and then hunt for the tiny "unsubscribe" link within the message. But did you know that most bulk email contains a hidden one-click unsubscribe? One click to that and you are removed. No login. No questions to answer.
