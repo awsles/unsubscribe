@@ -26,8 +26,9 @@ Once you have installed the add-in and you can see it, the next step is to go th
 Just click:
 ![One-Click Unsubscribe](screenshots/UnsubscribeButton2.png)
 
-The one-click unsubscribe is then confirmed:
+The one-click **unsubscribe** is then confirmed:
 ![One-Click Submitted](screenshots/One-ClickSubmitted.png)
+
 
 ---
 
