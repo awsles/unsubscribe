@@ -13,10 +13,10 @@ command; mobile clients use an Outlook mobile command that opens a compact task
 pane.
 
 ## Table of Contents
-* [FREQUENTLY ASKED QUESTIONS](#FREQUENTLY ASKED QUESTIONS)
-* [INSTALLATION - Single User](#INSTALLATION - Single User)
-* [INSTALLATION - M365 Tenant-wide](#INSTALLATION - M365 Tenant-wide)
-* [REVISION HISTORY](#REVISION HISTORY)
+* [FREQUENTLY ASKED QUESTIONS](#FREQUENTLY-ASKED-QUESTIONS)
+* [INSTALLATION - Single User](#INSTALLATION---Single User)
+* [INSTALLATION - M365 Tenant-wide](#INSTALLATION---M365 Tenant-wide)
+* [REVISION HISTORY](#REVISION-HISTORY)
 
 
 ## Cleaning up SPAM
