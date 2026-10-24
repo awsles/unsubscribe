@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Choose unsubscribe method</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    :root {
+      font-family: "Segoe UI", Arial, sans-serif;
+      color-scheme: light dark;
+    }
+
+    body {
+      margin: 0;
+      padding: 22px;
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    .card {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 8px;
+      font-weight: 600;
+    }
+
+    p {
+      font-size: 14px;
+      line-height: 1.45;
+      margin: 0 0 18px;
+    }
+
+    .option {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid ButtonBorder;
+      background: ButtonFace;
+      color: ButtonText;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 0 0 10px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .option:hover,
+    .option:focus {
+      outline: 2px solid Highlight;
+      outline-offset: 1px;
+    }
+
+    .label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .description {
+      display: block;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .cancel {
+      margin-top: 8px;
+      border: 0;
+      background: transparent;
+      color: LinkText;
+      cursor: pointer;
+      padding: 6px 0;
+      font: inherit;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Choose unsubscribe method</h1>
+    <p>This message supports both one-click unsubscribe and a link embedded in the message.</p>
+
+    <button class="option" id="oneClick" type="button">
+      <span class="label">One-Click</span>
+      <span class="description">Submit the RFC 8058 one-click unsubscribe request.</span>
+    </button>
+
+    <button class="option" id="embedded" type="button">
+      <span class="label">Embedded Link</span>
+      <span class="description">Open the unsubscribe or email-preferences link found in the message body.</span>
+    </button>
+
+    <button class="cancel" id="cancel" type="button">Cancel</button>
+  </main>
+
+  <script>
+    Office.onReady(function () {
+      function send(choice) {
+        Office.context.ui.messageParent(
+          JSON.stringify({
+            type: "unsubscribe-choice",
+            choice: choice
+          })
+        );
+      }
+
+      document.getElementById("oneClick").addEventListener("click", function () {
+        send("one-click");
+      });
+
+      document.getElementById("embedded").addEventListener("click", function () {
+        send("embedded");
+      });
+
+      document.getElementById("cancel").addEventListener("click", function () {
+        send("cancel");
+      });
+    });
+  </script>
+</body>
+</html>

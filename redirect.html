@@ -1,31 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Opening unsubscribe page…</title>
+  <meta charset="utf-8">
+  <title>Opening unsubscribe page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-  <p id="status">Opening unsubscribe page…</p>
+  <p>Opening unsubscribe page…</p>
   <script>
-    (() => {
-      const target = new URLSearchParams(window.location.search).get("target");
-      if (!target || !/^https:\/\//i.test(target)) {
-        document.getElementById("status").textContent =
-          "The unsubscribe address is missing or is not HTTPS.";
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get("target") || params.get("url");
+
+      if (!target || !/^https?:\/\//i.test(target)) {
+        document.body.textContent = "Invalid unsubscribe URL.";
         return;
       }
 
-      try {
-        const parsed = new URL(target);
-        if (parsed.protocol !== "https:") {
-          throw new Error("HTTPS required");
-        }
-        window.location.replace(parsed.toString());
-      } catch (_error) {
-        document.getElementById("status").textContent =
-          "The unsubscribe address is invalid.";
-      }
+      window.location.replace(target);
     })();
   </script>
 </body>

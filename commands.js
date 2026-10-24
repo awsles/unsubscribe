@@ -1,141 +1,178 @@
-/* global Office */
+/* Outlook Unsubscribe - v1.0.0.13
+ *
+ * Behavior:
+ *  - First click:
+ *      RFC 8058 One-Click + HTTPS -> submit POST.
+ *      Otherwise prefer List-Unsubscribe web URL, then a body link,
+ *      then mailto.
+ *  - If BOTH RFC 8058 One-Click and a body unsubscribe/preferences link
+ *    are available, successful submission of the first One-Click request
+ *    records that this message has been acted on.
+ *  - Second and subsequent clicks on that same message re-scan the message
+ *    and display a chooser between:
+ *        1. One-Click
+ *        2. Embedded Link
+ *    The chooser is shown only while both methods are available.
+ */
 
 const NOTIFICATION_KEY = "unsubscribe-status";
 const ONE_CLICK_VALUE = "List-Unsubscribe=One-Click";
+const FIRST_ONE_CLICK_PREFIX = "outlook-unsubscribe-oneclick-used:";
+const firstOneClickInMemory = new Set();
 
-// Strong unsubscribe phrases used when scanning links embedded in the message
-// body. This list includes the same kinds of multilingual terms used by
-// Microsoft's legacy Outlook Unsubscribe add-in, plus a few common English
-// variants. The scanner only considers http/https links.
-const UNSUBSCRIBE_TERMS = [
-  "unsubscribe",
-  "opt out",
-  "opt-out",
-  "cancel subscription",
-  "cancel my subscription",
-  "manage subscription",
-  "email preferences",
-  "manage email preferences",
-  "stop emails",
-  "darse de baja",
-  "cancelar la suscripción",
-  "désinscrire",
-  "desinscrire",
-  "désabonner",
-  "desabonner",
-  "abbestellen",
-  "abmelden",
-  "austragen",
-  "annullare l'iscrizione",
-  "cancellarsi",
-  "отписаться",
-  "отменить подписку",
-  "отказаться от подписки",
-  "退会",
-  "登録解除",
-  "取消订阅",
-  "终止订阅",
-  "退订",
-  "取消訂閱",
-  "終止訂閱",
-  "退訂",
-  "descadastrar",
-  "구독을 중단",
-  "구독을 취소",
-  "수신 가입을 취소",
-  "가입을 취소",
-  "إلغاء الاشتراك",
-  "الغاء الاشتراك",
-  "إلغاء الإشتراك",
-  "לבטל את המנוי",
-  "לבטל את הרישום",
-  "לבטל את ההרשמה",
+const TEXT_SIGNALS = [
+  ["unsubscribe", 120],
+  ["opt out", 110],
+  ["opt-out", 110],
+  ["email preferences", 105],
+  ["email preference", 102],
+  ["manage email preferences", 105],
+  ["manage preferences", 95],
+  ["subscription preferences", 95],
+  ["manage subscription", 90],
+  ["cancel subscription", 90],
+  ["remove me", 85],
+
+  // Signals inspired by Microsoft's legacy Unsubscribe add-in.
+  ["désinscrire", 90],
+  ["désabonner", 90],
+  ["abbestellen", 90],
+  ["abmelden", 85],
+  ["austragen", 85],
+  ["cancelar la suscripción", 90],
+  ["darse de baja", 90],
+  ["annullare l'iscrizione", 90],
+  ["cancellarsi", 85],
+  ["отписаться", 90],
+  ["отменить подписку", 90],
+  ["取消订阅", 90],
+  ["取消訂閱", 90],
+  ["退会", 85],
+  ["購読中止", 85],
+  ["구독을 취소", 90],
+  ["구독을 중단", 90],
+  ["إلغاء الاشتراك", 90],
+  ["לבטל את המנוי", 90],
+  ["cancelar assinatura", 90],
+  ["anular a subscrição", 90],
 ];
 
-const UNSUBSCRIBE_URL_TERMS = [
-  "unsubscribe",
-  "unsub",
-  "optout",
-  "opt-out",
-  "opt_out",
-  "email-preferences",
-  "email_preferences",
-  "subscription-preferences",
+const URL_SIGNALS = [
+  ["unsubscribe", 100],
+  ["unsub", 85],
+  ["optout", 90],
+  ["opt-out", 90],
+  ["opt_out", 90],
+  ["email-preferences", 85],
+  ["email_preferences", 85],
+  ["emailpreferences", 85],
+  ["manage-preferences", 80],
+  ["manage_preferences", 80],
+  ["preferences", 55],
+  ["subscription-preferences", 80],
 ];
 
 Office.onReady(() => {
-  // Office.js is initialized and the function command can now be associated.
+  if (Office.actions && Office.actions.associate) {
+    Office.actions.associate("unsubscribe", unsubscribe);
+  }
 });
 
-/**
- * Ribbon command invoked when the user clicks Unsubscribe.
- *
- * Priority:
- *   1. RFC 8058 one-click POST when List-Unsubscribe-Post is present and
- *      an HTTPS List-Unsubscribe URI is available.
- *   2. HTTPS List-Unsubscribe web URL.
- *   3. HTTPS unsubscribe link embedded in the message body.
- *   4. HTTP List-Unsubscribe web URL.
- *   5. HTTP unsubscribe link embedded in the message body.
- *   6. mailto List-Unsubscribe, composed in Outlook.
- */
 async function unsubscribe(event) {
-  let stage = "initializing";
+  let stage = "starting";
 
   try {
-    stage = "getting current message";
-    const item = Office.context.mailbox.item;
+    const item = Office.context.mailbox && Office.context.mailbox.item;
     if (!item) {
       safeShowError("No Outlook message is currently selected.");
       return;
     }
 
     stage = "reading internet headers";
-    let headers = "";
-    if (typeof item.getAllInternetHeadersAsync === "function") {
-      try {
-        headers = await getAllInternetHeaders(item);
-      } catch (headerError) {
-        // Continue with the message-body scanner on clients that expose the
-        // method but can't return headers for the current account or item.
-        console.warn("Unable to read internet headers; scanning the message body instead:", headerError);
-      }
-    }
+    const headers = await getInternetHeaders(item);
 
-    stage = "parsing List-Unsubscribe headers";
     const listUnsubscribe = getHeaderValue(headers, "List-Unsubscribe");
-    const listUnsubscribePost = getHeaderValue(headers, "List-Unsubscribe-Post");
+    const listUnsubscribePost = getHeaderValue(
+      headers,
+      "List-Unsubscribe-Post"
+    );
 
-    let httpsUrl = null;
-    let httpUrl = null;
-    let mailto = null;
+    const methods = parseListUnsubscribe(listUnsubscribe);
+    const httpsUrl = methods.httpsUrl;
+    const httpUrl = methods.httpUrl;
+    const mailtoUrl = methods.mailtoUrl;
+    const hasOneClick = Boolean(
+      httpsUrl && isOneClickPost(listUnsubscribePost)
+    );
 
-    if (listUnsubscribe) {
-      stage = "parsing unsubscribe methods";
-      const methods = parseUnsubscribeMethods(listUnsubscribe);
-      httpsUrl = methods.find((value) => /^https:\/\//i.test(value)) || null;
-      httpUrl = methods.find((value) => /^http:\/\//i.test(value)) || null;
-      mailto = methods.find((value) => /^mailto:/i.test(value)) || null;
-    }
+    // We need the body early when One-Click exists, because on subsequent
+    // clicks it may become the second choice in the chooser.
+    let bodyLinks = { httpsUrl: null, httpUrl: null };
 
-    if (httpsUrl && isOneClickPost(listUnsubscribePost)) {
+    if (hasOneClick) {
+      stage = "finding unsubscribe link in message body";
+      bodyLinks = await findBodyUnsubscribeLinks(item);
+      const embeddedUrl = bodyLinks.httpsUrl || bodyLinks.httpUrl || null;
+
+      // Second and subsequent click:
+      // Show the selection dialog ONLY if both methods are still available.
+      if (embeddedUrl && hasFirstOneClickRun(item)) {
+        stage = "choosing unsubscribe method";
+        const choice = await showUnsubscribeChoiceDialog();
+
+        if (choice === "one-click") {
+          stage = "submitting RFC 8058 one-click POST";
+          safeClearStatus();
+
+          const submitted = await performOneClickUnsubscribe(httpsUrl);
+          if (submitted) {
+            safeShowInfo("One-click unsubscribe request submitted.");
+          }
+          return;
+        }
+
+        if (choice === "embedded") {
+          stage = "opening embedded unsubscribe link";
+          safeClearStatus();
+          await openWebUnsubscribe(embeddedUrl);
+          return;
+        }
+
+        // Dialog was closed/cancelled.
+        return;
+      }
+
+      // First click, or One-Click exists without an embedded body option.
       stage = "submitting RFC 8058 one-click POST";
       safeClearStatus();
-      await performOneClickUnsubscribe(httpsUrl);
+
+      const submitted = await performOneClickUnsubscribe(httpsUrl);
+
+      if (submitted) {
+        if (embeddedUrl) {
+          markFirstOneClickRun(item);
+          safeShowInfo(
+            "One-click unsubscribe request submitted. Click Unsubscribe again to choose an unsubscribe method."
+          );
+        } else {
+          safeShowInfo("One-click unsubscribe request submitted.");
+        }
+      }
+
       return;
     }
 
+    // Header web links remain preferred over heuristic body scanning.
     if (httpsUrl) {
-      stage = "opening HTTPS List-Unsubscribe page";
+      stage = "opening HTTPS List-Unsubscribe link";
       safeClearStatus();
       await openWebUnsubscribe(httpsUrl);
       return;
     }
 
-    // Before falling back to HTTP or mailto, look for a usable web unsubscribe
-    // link in the message body. A visible HTTPS link is preferable to either.
-    stage = "scanning message body for unsubscribe links";
-    const bodyLinks = await findBodyUnsubscribeLinks(item);
+    // If we did not scan the body above, do it now.
+    stage = "finding unsubscribe link in message body";
+    bodyLinks = await findBodyUnsubscribeLinks(item);
 
     if (bodyLinks.httpsUrl) {
       stage = "opening HTTPS unsubscribe link from message body";
@@ -145,7 +182,7 @@ async function unsubscribe(event) {
     }
 
     if (httpUrl) {
-      stage = "opening HTTP List-Unsubscribe page";
+      stage = "opening HTTP List-Unsubscribe link";
       safeClearStatus();
       await openWebUnsubscribe(httpUrl);
       return;
@@ -158,64 +195,105 @@ async function unsubscribe(event) {
       return;
     }
 
-    if (mailto) {
-      stage = "composing mailto unsubscribe message";
+    if (mailtoUrl) {
+      stage = "composing unsubscribe email";
       safeClearStatus();
-      await composeMailtoUnsubscribe(mailto, headers, item);
+      composeMailtoUnsubscribe(mailtoUrl);
       return;
     }
 
-    if (listUnsubscribe) {
-      safeShowInfo("A List-Unsubscribe header exists, but no usable unsubscribe method was found.");
-    } else {
-      safeShowInfo("No unsubscribe method was found in this message.");
-    }
+    safeShowInfo("No unsubscribe method was found in this message.");
   } catch (error) {
-    console.error("Outlook Unsubscribe error at stage:", stage, error);
-    const detail = getErrorText(error);
-    const message = (`Unsubscribe failed while ${stage}: ${detail}`).slice(0, 145);
-    safeShowError(message);
+    console.error("Outlook Unsubscribe failed:", stage, error);
+    safeShowError(
+      `Unable to process this message's unsubscribe information (${stage}).`
+    );
   } finally {
     try {
       if (event && typeof event.completed === "function") {
         event.completed();
       }
-    } catch (completionError) {
-      console.error("Unable to complete Outlook command event:", completionError);
+    } catch (error) {
+      console.warn("Unable to complete Outlook command event:", error);
     }
   }
 }
 
-function isOneClickPost(value) {
-  return typeof value === "string" &&
-    value.trim().toLowerCase() === ONE_CLICK_VALUE.toLowerCase();
+function getInternetHeaders(item) {
+  return new Promise((resolve, reject) => {
+    if (!item || typeof item.getAllInternetHeadersAsync !== "function") {
+      reject(new Error("getAllInternetHeadersAsync is not available."));
+      return;
+    }
+
+    item.getAllInternetHeadersAsync((result) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        resolve(result.value || "");
+      } else {
+        reject(result.error || new Error("Unable to read Internet headers."));
+      }
+    });
+  });
 }
 
-/**
- * Sends the RFC 8058 one-click POST.
- *
- * no-cors is intentional: unsubscribe endpoints generally don't expose CORS
- * response headers. The request can still be sent, but the response is opaque,
- * so the add-in cannot truthfully claim that the remote server confirmed it.
- * credentials:"omit" ensures cookies and HTTP credentials are not sent.
- */
+function getHeaderValue(rawHeaders, headerName) {
+  if (!rawHeaders || !headerName) return null;
+
+  // RFC header unfolding: a continuation line begins with whitespace.
+  const unfolded = String(rawHeaders).replace(/\r?\n[ \t]+/g, " ");
+  const escaped = headerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = unfolded.match(
+    new RegExp(`^${escaped}\\s*:\\s*(.*)$`, "im")
+  );
+
+  return match ? match[1].trim() : null;
+}
+
+function parseListUnsubscribe(value) {
+  const result = {
+    httpsUrl: null,
+    httpUrl: null,
+    mailtoUrl: null,
+  };
+
+  if (!value) return result;
+
+  const bracketed = [...String(value).matchAll(/<([^>]+)>/g)].map(
+    (match) => match[1].trim()
+  );
+
+  const candidates =
+    bracketed.length > 0
+      ? bracketed
+      : String(value)
+          .split(",")
+          .map((part) => part.trim().replace(/^["'<\s]+|[>"'\s]+$/g, ""))
+          .filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (!result.httpsUrl && /^https:\/\//i.test(candidate)) {
+      result.httpsUrl = candidate;
+    } else if (!result.httpUrl && /^http:\/\//i.test(candidate)) {
+      result.httpUrl = candidate;
+    } else if (!result.mailtoUrl && /^mailto:/i.test(candidate)) {
+      result.mailtoUrl = candidate;
+    }
+  }
+
+  return result;
+}
+
+function isOneClickPost(value) {
+  return Boolean(
+    value &&
+      /(?:^|[;,]\s*)List-Unsubscribe\s*=\s*One-Click(?:\s*(?:[;,]|$))/i.test(
+        String(value)
+      )
+  );
+}
+
 async function performOneClickUnsubscribe(url) {
-  if (!/^https:\/\//i.test(url)) {
-    throw new Error("RFC 8058 one-click unsubscribe requires HTTPS.");
-  }
-
-  if (typeof fetch !== "function") {
-    console.warn("fetch() is unavailable; falling back to the unsubscribe page.");
-    await openWebUnsubscribe(url);
-    return;
-  }
-
   try {
-    // RFC 8058 permits application/x-www-form-urlencoded and requires that
-    // cookies / HTTP credentials not be sent.  Cross-origin unsubscribe
-    // endpoints generally don't expose CORS headers, so no-cors is used.
-    // IMPORTANT: Fetch requires redirect mode "follow" for no-cors requests;
-    // therefore we intentionally leave redirect at its default value.
     await fetch(url, {
       method: "POST",
       mode: "no-cors",
@@ -227,594 +305,422 @@ async function performOneClickUnsubscribe(url) {
       body: ONE_CLICK_VALUE,
     });
 
-    safeShowInfo("One-click unsubscribe request submitted.");
+    // no-cors produces an opaque response, so "submitted" is intentionally
+    // used instead of claiming the remote server confirmed success.
+    return true;
   } catch (error) {
-    // Some Outlook/WebView environments or remote endpoints may still block
-    // a background cross-origin POST.  A manual GET to the same URI is the
-    // RFC 8058 fallback path for an ordinary unsubscribe operation.
-    console.error("One-click unsubscribe POST failed; opening unsubscribe page:", error);
-    safeShowInfo("One-click unsubscribe could not be submitted automatically. Opening the unsubscribe page instead.");
+    console.error("RFC 8058 POST failed; opening URL instead:", error);
+    safeShowInfo(
+      "The one-click request could not be submitted. Opening the unsubscribe page instead."
+    );
+
     await openWebUnsubscribe(url);
+    return false;
   }
 }
 
-function openWebUnsubscribe(url) {
-  const canOpenExternalBrowser =
-    Office.context.requirements &&
-    Office.context.requirements.isSetSupported(
-      "OpenBrowserWindowApi",
-      "1.1"
-    );
-
-  if (canOpenExternalBrowser && Office.context.ui.openBrowserWindow) {
-    Office.context.ui.openBrowserWindow(url);
-    return Promise.resolve();
-  }
-
-  // New Outlook on Windows and Outlook on the web currently don't support
-  // OpenBrowserWindowApi 1.1. For HTTPS links, use an Office dialog whose
-  // first page is same-origin with the add-in, then immediately redirect.
-  if (/^https:\/\//i.test(url)) {
-    return openInOfficeDialog(url);
-  }
-
-  safeShowInfo(
-    "This Outlook client can't open this HTTP unsubscribe link automatically. Copy/open it manually."
-  );
-  return Promise.resolve();
-}
-
-// Do not add promptbeforeOpen:false as it will fail
-function openInOfficeDialog(targetUrl) {
-  return new Promise((resolve) => {
-    const redirectUrl = new URL("redirect.html", window.location.href);
-    redirectUrl.searchParams.set("target", targetUrl);
-
-    Office.context.ui.displayDialogAsync(
-      redirectUrl.toString(),
-      { height: 70, width: 55, displayInIframe: false },
-      (result) => {
-        if (result.status === Office.AsyncResultStatus.Failed) {
-          console.error("Unable to open unsubscribe dialog:", result.error);
-          safeShowError("Outlook couldn't open the unsubscribe page.");
-        }
-        resolve();
-      }
-    );
-  });
-}
-
-/**
- * Opens a new Outlook compose form for a mailto: List-Unsubscribe method.
- * The mailto URI controls the recipient and, when present, the subject.
- * If subject= is absent, "UNSUBSCRIBE" is used. A sender-provided body is
- * preserved; otherwise the body identifies the original recipient address.
- *
- * Outlook creates the draft in the mailbox context of the message being read.
- * Office.js doesn't expose Outlook's COM SentOnBehalfOfName property or any
- * other writable From field. If Outlook doesn't automatically select an alias,
- * the user must select it in the draft before sending.
- */
-async function composeMailtoUnsubscribe(mailtoUri, rawHeaders, item) {
-  const message = parseMailtoUri(mailtoUri);
-
-  if (!message.toRecipients.length) {
-    throw new Error("The mailto unsubscribe method does not contain a recipient.");
-  }
-
-  const originalRecipient = getOriginalRecipientAddress(rawHeaders, item);
-  if (!originalRecipient) {
-    throw new Error("The address that received the original message could not be determined.");
-  }
-
-  const form = {
-    toRecipients: message.toRecipients,
-    subject: message.subject !== null ? message.subject : "UNSUBSCRIBE",
-    htmlBody: textToSafeHtml(
-      message.body !== null
-        ? message.body
-        : `Please UNSUBSCRIBE ${originalRecipient}`
-    ),
-  };
-
-  await openNewMessageForm(form);
-}
-
-/**
- * Uses the callback-based compose API where available so an ExecuteFunction
- * command remains alive until Outlook has created the draft. This is required
- * for reliable behavior in Outlook on the web. Older clients fall back to the
- * synchronous Mailbox 1.6 API.
- */
-function openNewMessageForm(form) {
-  const mailbox = Office.context.mailbox;
-
-  if (typeof mailbox.displayNewMessageFormAsync === "function") {
-    return new Promise((resolve, reject) => {
-      mailbox.displayNewMessageFormAsync(form, (result) => {
-        if (result.status === Office.AsyncResultStatus.Failed) {
-          reject(result.error || new Error("Outlook couldn't open the unsubscribe draft."));
-          return;
-        }
-
-        resolve();
-      });
-    });
-  }
-
-  mailbox.displayNewMessageForm(form);
-  return Promise.resolve();
-}
-
-/**
- * Returns the original recipient address. The Internet To header is preferred
- * because it preserves an alias that Outlook may resolve to a mailbox's primary
- * address. Outlook's resolved To collection and user profile are fallbacks.
- */
-function getOriginalRecipientAddress(rawHeaders, item) {
-  const headerAddress = extractFirstEmailAddress(getHeaderValue(rawHeaders, "To"));
-  if (headerAddress) return headerAddress;
-
-  if (item && Array.isArray(item.to)) {
-    for (const recipient of item.to) {
-      const address = recipient && (recipient.emailAddress || recipient.address);
-      if (address) return String(address).trim();
-    }
-  }
-
-  const profile = Office.context.mailbox.userProfile;
-  return profile && profile.emailAddress
-    ? String(profile.emailAddress).trim()
-    : null;
-}
-
-function extractFirstEmailAddress(value) {
-  if (!value) return null;
-
-  const match = String(value).match(
-    /(?:<\s*)?([A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?:\s*>)?/i
-  );
-  return match ? match[1] : null;
-}
-
-/**
- * Parses the RFC 6068 pieces we need from a mailto URI.
- * Supports recipients in both the URI path and a ?to= field, plus subject
- * and body. Other headers are intentionally ignored.
- */
-function parseMailtoUri(uri) {
-  if (!/^mailto:/i.test(uri)) {
-    throw new Error("Not a mailto URI.");
-  }
-
-  const raw = uri.slice(uri.indexOf(":") + 1);
-  const questionMark = raw.indexOf("?");
-  const rawTo = questionMark >= 0 ? raw.slice(0, questionMark) : raw;
-  const rawQuery = questionMark >= 0 ? raw.slice(questionMark + 1) : "";
-
-  const recipients = decodeRecipientList(rawTo);
-  let subject = null;
-  let body = null;
-
-  if (rawQuery) {
-    for (const field of rawQuery.split("&")) {
-      if (!field) continue;
-
-      const equals = field.indexOf("=");
-      const rawName = equals >= 0 ? field.slice(0, equals) : field;
-      const rawValue = equals >= 0 ? field.slice(equals + 1) : "";
-      const name = safeDecodeURIComponent(rawName).toLowerCase();
-      const value = safeDecodeURIComponent(rawValue);
-
-      if (name === "to") {
-        recipients.push(...decodeRecipientList(rawValue));
-      } else if (name === "subject" && subject === null) {
-        subject = value;
-      } else if (name === "body" && body === null) {
-        body = value;
-      }
-    }
-  }
-
-  return {
-    toRecipients: dedupeStrings(recipients),
-    subject,
-    body,
-  };
-}
-
-function decodeRecipientList(rawValue) {
-  if (!rawValue) return [];
-
-  return rawValue
-    .split(",")
-    .map((value) => safeDecodeURIComponent(value.trim()))
-    .filter(Boolean);
-}
-
-function safeDecodeURIComponent(value) {
-  try {
-    // decodeURIComponent correctly leaves literal '+' characters unchanged,
-    // which is important for mailto addresses such as user+tag@example.com.
-    return decodeURIComponent(value);
-  } catch (error) {
-    console.warn("Unable to decode mailto component:", value, error);
-    return value;
-  }
-}
-
-function dedupeStrings(values) {
-  const seen = new Set();
-  const output = [];
-
-  for (const value of values) {
-    const key = value.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      output.push(value);
-    }
-  }
-
-  return output;
-}
-
-function textToSafeHtml(text) {
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-    .replace(/\r\n|\r|\n/g, "<br>");
-}
-
-
-/**
- * Looks for unsubscribe links embedded in the current message body.
- *
- * Failure to read/parse the body is deliberately non-fatal. Header-based
- * mailto unsubscribe can still be used if body inspection isn't available.
- */
 async function findBodyUnsubscribeLinks(item) {
   try {
-    if (!item.body || typeof item.body.getAsync !== "function") {
-      return { httpsUrl: null, httpUrl: null };
-    }
+    const html = await getBodyHtml(item);
+    if (!html) return { httpsUrl: null, httpUrl: null };
 
-    const html = await getMessageBodyHtml(item);
-    return scoreBodyUnsubscribeLinks(html);
+    return scoreBodyLinks(html);
   } catch (error) {
-    console.warn("Unable to scan message body for unsubscribe links:", error);
+    // Body scanning is a fallback. It must never prevent header/mailto logic.
+    console.warn("Unable to inspect the message body:", error);
     return { httpsUrl: null, httpUrl: null };
   }
 }
 
-function getMessageBodyHtml(item) {
+function getBodyHtml(item) {
   return new Promise((resolve, reject) => {
+    if (
+      !item ||
+      !item.body ||
+      typeof item.body.getAsync !== "function"
+    ) {
+      reject(new Error("Message body API is not available."));
+      return;
+    }
+
     item.body.getAsync(Office.CoercionType.Html, (result) => {
       if (result.status === Office.AsyncResultStatus.Succeeded) {
         resolve(result.value || "");
       } else {
-        reject(result.error || new Error("body.getAsync failed"));
+        reject(result.error || new Error("Unable to read the message body."));
       }
     });
   });
 }
 
-/**
- * Parse all http/https anchors in the message and score their likelihood of
- * being an unsubscribe control. The link text, accessibility labels, title,
- * descendant image alt text, URL, and bounded text immediately before and
- * after the anchor are all considered.
- */
-function scoreBodyUnsubscribeLinks(html) {
-  if (!html || typeof DOMParser === "undefined") {
-    return { httpsUrl: null, httpUrl: null };
+function scoreBodyLinks(html) {
+  const result = { httpsUrl: null, httpUrl: null };
+
+  let doc;
+  try {
+    doc = new DOMParser().parseFromString(html, "text/html");
+  } catch (error) {
+    console.warn("Unable to parse message HTML:", error);
+    return result;
   }
 
-  const document = new DOMParser().parseFromString(String(html), "text/html");
-  const anchors = Array.from(document.querySelectorAll("a[href]"));
   const candidates = [];
 
-  for (const anchor of anchors) {
+  for (const anchor of doc.querySelectorAll("a[href]")) {
     const rawHref = (anchor.getAttribute("href") || "").trim();
+
     if (!/^https?:\/\//i.test(rawHref)) {
       continue;
     }
 
-    const signalText = collectAnchorSignalText(anchor);
-    const adjacentText = collectAdjacentAnchorText(anchor, anchors);
-    const score = scoreUnsubscribeCandidate(signalText, rawHref, adjacentText);
-    if (score <= 0) {
-      continue;
+    const visibleText = [
+      anchor.textContent || "",
+      anchor.getAttribute("aria-label") || "",
+      anchor.getAttribute("title") || "",
+      ...[...anchor.querySelectorAll("img[alt]")].map(
+        (img) => img.getAttribute("alt") || ""
+      ),
+    ]
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+    let decodedHref = rawHref.toLowerCase();
+    try {
+      decodedHref = decodeURIComponent(decodedHref);
+    } catch (_) {
+      // Keep original href if percent-decoding fails.
     }
 
-    candidates.push({
-      url: rawHref,
-      score,
-      isHttps: /^https:\/\//i.test(rawHref),
-    });
+    let score = 0;
+
+    for (const [term, weight] of TEXT_SIGNALS) {
+      if (visibleText.includes(term)) {
+        score = Math.max(score, weight);
+      }
+    }
+
+    for (const [term, weight] of URL_SIGNALS) {
+      if (decodedHref.includes(term)) {
+        score = Math.max(score, weight);
+      }
+    }
+
+    // Exact/near-exact labels are especially strong signals.
+    if (/^\s*unsubscribe\s*[.!]?\s*$/i.test(visibleText)) {
+      score += 40;
+    } else if (/^\s*email preferences\s*[.!]?\s*$/i.test(visibleText)) {
+      score += 35;
+    }
+
+    if (score > 0) {
+      candidates.push({
+        url: rawHref,
+        protocol: /^https:\/\//i.test(rawHref) ? "https" : "http",
+        score,
+      });
+    }
   }
 
-  // Highest confidence first. For equal scores, prefer HTTPS.
   candidates.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    if (a.isHttps !== b.isHttps) return a.isHttps ? -1 : 1;
-    return 0;
+    // Prefer HTTPS, then the stronger semantic signal.
+    if (a.protocol !== b.protocol) {
+      return a.protocol === "https" ? -1 : 1;
+    }
+    return b.score - a.score;
   });
 
-  const bestHttps = candidates.find((candidate) => candidate.isHttps);
-  const bestHttp = candidates.find((candidate) => !candidate.isHttps);
+  for (const candidate of candidates) {
+    if (candidate.protocol === "https" && !result.httpsUrl) {
+      result.httpsUrl = candidate.url;
+    } else if (candidate.protocol === "http" && !result.httpUrl) {
+      result.httpUrl = candidate.url;
+    }
 
-  return {
-    httpsUrl: bestHttps ? bestHttps.url : null,
-    httpUrl: bestHttp ? bestHttp.url : null,
-  };
+    if (result.httpsUrl && result.httpUrl) break;
+  }
+
+  return result;
 }
 
-function collectAnchorSignalText(anchor) {
-  const parts = [
-    anchor.textContent || "",
-    anchor.getAttribute("aria-label") || "",
-    anchor.getAttribute("title") || "",
-  ];
-
-  for (const image of Array.from(anchor.querySelectorAll("img[alt]"))) {
-    parts.push(image.getAttribute("alt") || "");
-  }
-
-  return normalizeSearchText(parts.join(" "));
-}
-
-/**
- * Collect a small amount of document-order text around an anchor. Context is
- * bounded and stops at the previous/next hyperlink so that an unsubscribe
- * phrase is associated only with the nearest link. This supports markup such
- * as "To unsubscribe, <a>click here</a>" without treating "click here" as a
- * signal by itself.
- */
-function collectAdjacentAnchorText(anchor, anchors, maxCharacters = 150) {
-  const emptyContext = { before: "", after: "" };
-  const document = anchor && anchor.ownerDocument;
-  if (!document || typeof document.createRange !== "function") {
-    return emptyContext;
-  }
-
-  const orderedAnchors = anchors || Array.from(document.querySelectorAll("a[href]"));
-  const anchorIndex = orderedAnchors.indexOf(anchor);
-  const root = document.body || document.documentElement;
-  if (anchorIndex < 0 || !root) {
-    return emptyContext;
-  }
+function composeMailtoUnsubscribe(mailtoUrl) {
+  let parsed;
 
   try {
-    const beforeRange = document.createRange();
-    if (anchorIndex > 0) {
-      beforeRange.setStartAfter(orderedAnchors[anchorIndex - 1]);
-    } else {
-      beforeRange.setStart(root, 0);
-    }
-    beforeRange.setEndBefore(anchor);
-
-    const afterRange = document.createRange();
-    afterRange.setStartAfter(anchor);
-    if (anchorIndex + 1 < orderedAnchors.length) {
-      afterRange.setEndBefore(orderedAnchors[anchorIndex + 1]);
-    } else {
-      afterRange.setEnd(root, root.childNodes.length);
-    }
-
-    const before = normalizeSearchText(beforeRange.toString());
-    const after = normalizeSearchText(afterRange.toString());
-    return {
-      before: before.slice(-maxCharacters),
-      after: after.slice(0, maxCharacters),
-    };
+    parsed = new URL(mailtoUrl);
   } catch (error) {
-    console.warn("Unable to collect text adjacent to a message link:", error);
-    return emptyContext;
-  }
-}
-
-function scoreUnsubscribeCandidate(signalText, href, adjacentText = { before: "", after: "" }) {
-  const text = normalizeSearchText(signalText);
-  const urlText = normalizeSearchText(safeDecodeURIComponent(String(href)));
-  let score = 0;
-
-  for (const term of UNSUBSCRIBE_TERMS) {
-    const normalizedTerm = normalizeSearchText(term);
-    if (!normalizedTerm) continue;
-
-    if (text === normalizedTerm) {
-      score = Math.max(score, 120);
-    } else if (text.includes(normalizedTerm)) {
-      score = Math.max(score, 100);
-    }
+    throw new Error("The mailto unsubscribe address is invalid.");
   }
 
-  for (const term of UNSUBSCRIBE_URL_TERMS) {
-    if (urlText.includes(normalizeSearchText(term))) {
-      score = Math.max(score, 60);
-    }
+  const recipients = decodeURIComponent(parsed.pathname || "")
+    .split(/[;,]/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (recipients.length === 0) {
+    throw new Error("The mailto unsubscribe address has no recipient.");
   }
 
-  score = Math.max(score, scoreAdjacentUnsubscribeText(adjacentText));
+  const subject = parsed.searchParams.get("subject") || "";
+  const body = parsed.searchParams.get("body") || "";
 
-  // Favor HTTPS when everything else is equal without allowing protocol alone
-  // to turn an unrelated link into a candidate.
-  if (score > 0 && /^https:\/\//i.test(href)) {
-    score += 5;
-  }
-
-  return score;
-}
-
-function scoreAdjacentUnsubscribeText(adjacentText) {
-  const before = normalizeSearchText(adjacentText && adjacentText.before);
-  const after = normalizeSearchText(adjacentText && adjacentText.after);
-  let closestDistance = Number.POSITIVE_INFINITY;
-
-  for (const term of UNSUBSCRIBE_TERMS) {
-    const normalizedTerm = normalizeSearchText(term);
-    if (!normalizedTerm) continue;
-
-    const beforeIndex = before.lastIndexOf(normalizedTerm);
-    if (beforeIndex >= 0) {
-      closestDistance = Math.min(
-        closestDistance,
-        before.length - beforeIndex - normalizedTerm.length
-      );
-    }
-
-    const afterIndex = after.indexOf(normalizedTerm);
-    if (afterIndex >= 0) {
-      closestDistance = Math.min(closestDistance, afterIndex);
-    }
-  }
-
-  if (!Number.isFinite(closestDistance)) return 0;
-  return closestDistance <= 40 ? 90 : 75;
-}
-
-function normalizeSearchText(value) {
-  return String(value || "")
-    .toLowerCase()
-    .normalize("NFKC")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getAllInternetHeaders(item) {
-  return new Promise((resolve, reject) => {
-    item.getAllInternetHeadersAsync((result) => {
-      if (result.status === Office.AsyncResultStatus.Succeeded) {
-        resolve(result.value || "");
-      } else {
-        reject(result.error || new Error("getAllInternetHeadersAsync failed"));
-      }
-    });
+  Office.context.mailbox.displayNewMessageForm({
+    toRecipients: recipients,
+    subject,
+    htmlBody: escapeHtml(body).replace(/\r?\n/g, "<br>"),
   });
 }
 
-/**
- * Returns an unfolded RFC-style header value. Continuation lines that begin
- * with SP/HTAB are joined to the previous line.
- */
-function getHeaderValue(rawHeaders, headerName) {
-  const unfolded = String(rawHeaders).replace(/\r?\n[ \t]+/g, " ");
-  const escaped = headerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = unfolded.match(new RegExp(`^${escaped}:\\s*(.+)$`, "im"));
-  return match ? match[1].trim() : null;
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
-/**
- * List-Unsubscribe normally contains comma-separated URI references inside
- * angle brackets, for example:
- *   <mailto:list@example.com>, <https://example.com/unsubscribe/123>
- *
- * This parser follows that form but also tolerates a bare HTTP(S)/mailto URI.
- */
-function parseUnsubscribeMethods(headerValue) {
-  const values = [];
-  const bracketed = /<([^>]+)>/g;
-  let match;
+async function openWebUnsubscribe(url) {
+  if (!/^https?:\/\//i.test(String(url || ""))) {
+    throw new Error("Unsupported unsubscribe URL.");
+  }
 
-  while ((match = bracketed.exec(headerValue)) !== null) {
-    const value = match[1].trim();
-    if (isAllowedMethod(value)) {
-      values.push(value);
+  // Classic Outlook for Windows supports openBrowserWindow.
+  if (
+    Office.context.ui &&
+    typeof Office.context.ui.openBrowserWindow === "function"
+  ) {
+    try {
+      Office.context.ui.openBrowserWindow(url);
+      return;
+    } catch (error) {
+      console.warn("openBrowserWindow failed; using Office dialog:", error);
     }
   }
 
-  if (values.length === 0) {
-    for (const part of headerValue.split(",")) {
-      const value = part.trim().replace(/^<|>$/g, "");
-      if (isAllowedMethod(value)) {
-        values.push(value);
+  await openViaRedirectDialog(url);
+}
+
+function openViaRedirectDialog(url) {
+  return new Promise((resolve, reject) => {
+    if (
+      !Office.context.ui ||
+      typeof Office.context.ui.displayDialogAsync !== "function"
+    ) {
+      reject(new Error("Office dialog API is unavailable."));
+      return;
+    }
+
+    const redirectUrl = new URL("redirect.html", window.location.href);
+    redirectUrl.searchParams.set("target", url);
+    redirectUrl.searchParams.set("v", "1.0.0.13");
+
+    Office.context.ui.displayDialogAsync(
+      redirectUrl.toString(),
+      {
+        height: 70,
+        width: 55,
+        displayInIframe: false,
+        promptBeforeOpen: false,
+      },
+      (result) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          resolve();
+        } else {
+          reject(
+            result.error || new Error("Unable to open the unsubscribe page.")
+          );
+        }
       }
-    }
-  }
-
-  return values;
+    );
+  });
 }
 
-function isAllowedMethod(value) {
-  return /^(https?:\/\/|mailto:)/i.test(value);
+function getMessageStateKey(item) {
+  if (!item) return null;
+  const id = item.itemId || item.internetMessageId;
+  return id ? `${FIRST_ONE_CLICK_PREFIX}${String(id)}` : null;
 }
 
-function getErrorText(error) {
-  if (!error) return "unknown error";
-  if (typeof error === "string") return error;
-  if (error.message) return String(error.message);
-  if (error.name) return String(error.name);
+function hasFirstOneClickRun(item) {
+  const key = getMessageStateKey(item);
+  if (!key) return false;
+
+  if (firstOneClickInMemory.has(key)) return true;
+
   try {
-    return JSON.stringify(error);
-  } catch (_) {
-    return "unknown error";
+    return window.localStorage.getItem(key) === "1";
+  } catch (error) {
+    console.warn("Unable to read one-click state from localStorage:", error);
+    return false;
   }
+}
+
+function markFirstOneClickRun(item) {
+  const key = getMessageStateKey(item);
+  if (!key) return;
+
+  firstOneClickInMemory.add(key);
+
+  try {
+    window.localStorage.setItem(key, "1");
+  } catch (error) {
+    console.warn("Unable to persist one-click state:", error);
+  }
+}
+
+function showUnsubscribeChoiceDialog() {
+  return new Promise((resolve, reject) => {
+    if (
+      !Office.context.ui ||
+      typeof Office.context.ui.displayDialogAsync !== "function"
+    ) {
+      reject(new Error("Office dialog API is unavailable."));
+      return;
+    }
+
+    const dialogUrl = new URL("unsubscribe-options.html", window.location.href);
+    dialogUrl.searchParams.set("v", "1.0.0.13");
+
+    Office.context.ui.displayDialogAsync(
+      dialogUrl.toString(),
+      {
+        height: 45,
+        width: 35,
+        displayInIframe: true,
+        promptBeforeOpen: false,
+      },
+      (result) => {
+        if (result.status !== Office.AsyncResultStatus.Succeeded) {
+          reject(
+            result.error ||
+              new Error("Unable to display the unsubscribe method chooser.")
+          );
+          return;
+        }
+
+        const dialog = result.value;
+        let settled = false;
+
+        const finish = (choice) => {
+          if (settled) return;
+          settled = true;
+
+          try {
+            dialog.close();
+          } catch (_) {
+            // Ignore close failures.
+          }
+
+          resolve(choice);
+        };
+
+        dialog.addEventHandler(
+          Office.EventType.DialogMessageReceived,
+          (args) => {
+            try {
+              const message = JSON.parse(args.message || "{}");
+
+              if (
+                message &&
+                message.type === "unsubscribe-choice" &&
+                (message.choice === "one-click" ||
+                  message.choice === "embedded" ||
+                  message.choice === "cancel")
+              ) {
+                finish(
+                  message.choice === "cancel" ? null : message.choice
+                );
+                return;
+              }
+            } catch (error) {
+              console.warn("Unable to parse dialog message:", error);
+            }
+
+            finish(null);
+          }
+        );
+
+        dialog.addEventHandler(
+          Office.EventType.DialogEventReceived,
+          () => finish(null)
+        );
+      }
+    );
+  });
 }
 
 function safeShowInfo(message) {
-  try {
-    showInfo(message);
-  } catch (error) {
-    console.error("Unable to display informational notification:", error);
-  }
+  safeReplaceNotification(
+    Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
+    message
+  );
 }
 
 function safeShowError(message) {
+  safeReplaceNotification(
+    Office.MailboxEnums.ItemNotificationMessageType.ErrorMessage,
+    message
+  );
+}
+
+function safeReplaceNotification(type, message) {
   try {
-    showError(message);
+    const item = Office.context.mailbox && Office.context.mailbox.item;
+
+    if (
+      !item ||
+      !item.notificationMessages ||
+      typeof item.notificationMessages.replaceAsync !== "function"
+    ) {
+      console.log(message);
+      return;
+    }
+
+    const details = {
+      type,
+      message: String(message).slice(0, 150),
+    };
+
+    if (
+      type ===
+      Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage
+    ) {
+      details.icon = "Icon.16x16";
+      details.persistent = false;
+    }
+
+    item.notificationMessages.replaceAsync(
+      NOTIFICATION_KEY,
+      details,
+      (result) => {
+        if (result.status !== Office.AsyncResultStatus.Succeeded) {
+          console.warn("Unable to display Outlook notification:", result.error);
+        }
+      }
+    );
   } catch (error) {
-    console.error("Unable to display error notification:", error);
+    console.warn("Unable to display Outlook notification:", error);
   }
 }
 
 function safeClearStatus() {
   try {
-    clearStatus();
+    const item = Office.context.mailbox && Office.context.mailbox.item;
+
+    if (
+      item &&
+      item.notificationMessages &&
+      typeof item.notificationMessages.removeAsync === "function"
+    ) {
+      item.notificationMessages.removeAsync(NOTIFICATION_KEY);
+    }
   } catch (error) {
-    console.error("Unable to clear prior notification:", error);
+    console.warn("Unable to clear Outlook notification:", error);
   }
 }
 
-function showInfo(message) {
-  Office.context.mailbox.item.notificationMessages.replaceAsync(
-    NOTIFICATION_KEY,
-    {
-      type: Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
-      message,
-      icon: "Icon.16x16",
-      persistent: false,
-    },
-    (result) => {
-      if (result.status === Office.AsyncResultStatus.Failed) {
-        console.error("Unable to display notification:", result.error);
-      }
-    }
-  );
-}
-
-function showError(message) {
-  Office.context.mailbox.item.notificationMessages.replaceAsync(
-    NOTIFICATION_KEY,
-    {
-      type: Office.MailboxEnums.ItemNotificationMessageType.ErrorMessage,
-      message,
-    },
-    (result) => {
-      if (result.status === Office.AsyncResultStatus.Failed) {
-        console.error("Unable to display error notification:", result.error);
-      }
-    }
-  );
-}
-
-function clearStatus() {
-  Office.context.mailbox.item.notificationMessages.removeAsync(
-    NOTIFICATION_KEY,
-    () => {}
-  );
-}
-
-Office.actions.associate("unsubscribe", unsubscribe);
+// Keep a global symbol as a compatibility fallback for hosts that resolve the
+// ExecuteFunction function name directly instead of Office.actions.associate().
+window.unsubscribe = unsubscribe;
