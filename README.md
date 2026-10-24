@@ -31,6 +31,12 @@ The one-click **Unsubscribe** is then confirmed:
 
 In the event that there is no hidden RFC-8058 compliant header, the add-in will attempt to locate an unsubscribe link within the message body. This will open a browser page to the associated unsubscribe page.
 
+### Update v1.0.0.13
+v1.0.0.13 introduces a change whereby if you click Unsubscribe a second time, it will bring up a dialog asking you which unsubscribe method you would like to use.
+This dialog only appears if there is there is both an RFC-8058 compliant option AND a detectable embedded unsubscribe link within the message body.
+
+![Unsubscribe Method](screenshots/ChooseMethodSmall.png)
+
 ---
 
 # INSTALLATION for Single User
