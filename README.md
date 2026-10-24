@@ -224,6 +224,7 @@ Questions: Please refer any questions to the Unsubscribe project on GitHub.
 - v1.0.0.9 -- Wait for Outlook to open mailto drafts before completing the command
 - v1.0.0.10 -- Add Outlook mobile command surface and mobile unsubscribe task pane
 - v1.0.0.11 -- Detect unsubscribe wording immediately before or after a hyperlink
+- v1.0.0.13 -- Adds a second-click unsubscribe chooser to select One-Click or embedded link when both are available after the first click
 
 ## Known Limitations & Issues
 
