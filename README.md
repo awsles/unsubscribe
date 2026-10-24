@@ -30,7 +30,7 @@ Just click the **Unsubscribe** button when reading the email message:
 ![One-Click Unsubscribe](screenshots/UnsubscribeButton2.png)
 
 The one-click **Unsubscribe** is then confirmed:
-![One-Click Submitted](screenshots/One-ClickSubmitted.png)
+![One-Click Submitted](screenshots/One-ClickSubmitted2.png)
 
 In the event that there is no hidden RFC-8058 compliant header, the add-in will attempt to locate an unsubscribe link within the message body. This will open a browser page to the associated unsubscribe page.
 
