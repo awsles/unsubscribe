@@ -1,0 +1,11 @@
+# Drafts
+.drafts/
+
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+*.swp
+~$*
+.temp/
