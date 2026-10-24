@@ -35,13 +35,14 @@ The one-click **Unsubscribe** is then confirmed:
 In the event that there is no hidden RFC-8058 compliant header, the add-in will attempt to locate an unsubscribe link within the message body. This will open a browser page to the associated unsubscribe page.
 
 ### Mobile Version
-The Unsubscribe add-in also works for Mobile Outlook but it only finds and uses the embedded unsubscribe link.
-Microsoft does not make message headers available (which provides one-click option) in the add-in on mobile Outlook.
-
+The Unsubscribe add-in also works for Mobile Outlook but it only finds and uses the embedded unsubscribe link due to limitations imposed by Microsoft. 
 
 ### Update v1.0.0.13
 v1.0.0.13 introduces a change whereby if you click Unsubscribe a second time, it will bring up a dialog asking you which unsubscribe method you would like to use.
 This dialog only appears if there is there is both an RFC-8058 compliant option AND a detectable embedded unsubscribe link within the message body.
+The reason for this is that while the RFC-compliant one-click unsubscribe will unsubscribe you, it ONLY unsubscribes you from that specific email list.
+But if you use the embedded link in the message body, you are often given the option to opt-out of related lists.
+The mobile version does not support this option due to the header retreival limitation.
 
 ![Unsubscribe Method](screenshots/ChooseMethodSmall.png)
 
