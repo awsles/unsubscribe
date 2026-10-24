@@ -1,6 +1,6 @@
 ![Outlook Unsubscribe](images/Promo_Banner2.png)
 
-**CURRENT VERSION:** v1.0.0.11  (21 September 2026)
+**CURRENT VERSION:** v1.0.0.13  (24 October 2026)
 
 # Outlook Unsubscribe
 *Tired of junk email?  Me too!* Even being careful with where and when I share my email address, I was still getting 40+ a day. And there was no "easy" way to go through an unsubscribe. You had to open the latest message from each sender and then hunt for the tiny "unsubscribe" link within the message. *Did you know that most bulk email contains a hidden [RFC-8058](https://certified-senders.org/wp-content/uploads/2017/07/CSA_one-click_list-unsubscribe.pdf) one-click unsubscribe?* One click to that and your remove request is sent!  No login. No questions to answer. If this hidden field is missing, the add-in attempts to find the unsubscribe link embedded in the email body.
@@ -11,6 +11,9 @@ The add-in supports **new Outlook**, **classic Outlook**, **Outlook on the web (
 and Outlook on **iOS and Android**. Desktop and web clients use a ribbon
 command; mobile clients use an Outlook mobile command that opens a compact task
 pane. My plan is to eventually make this a free giveaway on Microsoft Marketplace.
+
+NOTE: This add-in only works for Outlook with mailboxes hosted on Exchange server, Hotmail, or in Microsoft 365. GMail and other email providers are not supported.
+
 
 ## Table of Contents
 * [FREQUENTLY ASKED QUESTIONS](#FREQUENTLY-ASKED-QUESTIONS)
@@ -30,6 +33,11 @@ The one-click **Unsubscribe** is then confirmed:
 ![One-Click Submitted](screenshots/One-ClickSubmitted.png)
 
 In the event that there is no hidden RFC-8058 compliant header, the add-in will attempt to locate an unsubscribe link within the message body. This will open a browser page to the associated unsubscribe page.
+
+### Mobile Version
+The Unsubscribe add-in also works for Mobile Outlook but it only finds and uses the embedded unsubscribe link.
+Microsoft does not make message headers available (which provides one-click option) in the add-in on mobile Outlook.
+
 
 ### Update v1.0.0.13
 v1.0.0.13 introduces a change whereby if you click Unsubscribe a second time, it will bring up a dialog asking you which unsubscribe method you would like to use.
