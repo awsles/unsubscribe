@@ -119,7 +119,8 @@ Depending on the message, the add-in will either:
 
 ## Updating the add-in
 
-Most JavaScript/HTML changes are loaded from the hosted GitHub Pages site automatically. However, if the `manifest.xml` itself changes, Outlook may continue using the older copy that was previously sideloaded.
+Most JavaScript/HTML changes are loaded from the hosted GitHub Pages site automatically.
+However, if the `manifest.xml` itself changes, Outlook may continue using the older copy that was previously sideloaded.
 
 When the manifest version changes:
 
